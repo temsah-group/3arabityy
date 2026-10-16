@@ -98,6 +98,25 @@ export class SessionsService {
       .exec();
   }
 
+  /** Signs the user out everywhere except [keepSessionId], e.g. after a password change. */
+  async revokeOthers(userId: string, keepSessionId: string, reason: string): Promise<void> {
+    await this.tokens
+      .updateMany(
+        {
+          userId: new Types.ObjectId(userId),
+          sessionId: { $ne: keepSessionId },
+          state: { $ne: RefreshTokenState.REVOKED },
+        },
+        { $set: { state: RefreshTokenState.REVOKED, revokedAt: new Date(), revokeReason: reason } },
+      )
+      .exec();
+  }
+
+  /** Forgets every session of a deleted account. */
+  async deleteAll(userId: string): Promise<void> {
+    await this.tokens.deleteMany({ userId: new Types.ObjectId(userId) }).exec();
+  }
+
   private async issue(row: {
     userId: Types.ObjectId;
     sessionId: string;

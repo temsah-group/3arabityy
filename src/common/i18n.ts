@@ -129,6 +129,33 @@ const messages = {
 
   'users.profileUpdated': { ar: 'تم تحديث بياناتك', en: 'Your details were updated' },
   'users.notFound': { ar: 'المستخدم غير موجود', en: 'User not found' },
+  'users.wrongPassword': {
+    ar: 'كلمة المرور الحالية غير صحيحة',
+    en: 'The current password is incorrect',
+  },
+  'users.samePassword': {
+    ar: 'كلمة المرور الجديدة لازم تكون مختلفة عن الحالية',
+    en: 'The new password must differ from the current one',
+  },
+  'users.passwordChanged': {
+    ar: 'تم تغيير كلمة المرور، وتم تسجيل الخروج من الأجهزة الأخرى',
+    en: 'Password changed. Other devices were signed out',
+  },
+  'users.accountDeleted': {
+    ar: 'تم حذف حسابك نهائياً',
+    en: 'Your account was deleted for good',
+  },
+  'users.photoUpdated': { ar: 'تم تحديث الصورة الشخصية', en: 'Profile photo updated' },
+  'users.photoRemoved': { ar: 'تم حذف الصورة الشخصية', en: 'Profile photo removed' },
+  'users.photoRequired': { ar: 'اختار صورة الأول', en: 'Choose a photo first' },
+  'users.photoInvalid': {
+    ar: 'الصورة لازم تكون JPEG أو PNG أو WebP',
+    en: 'The photo must be a JPEG, PNG or WebP image',
+  },
+  'users.photoTooLarge': {
+    ar: 'الصورة أكبر من {0} ميجا',
+    en: 'The photo is larger than {0} MB',
+  },
 
   'mail.otpSubject.register': {
     ar: 'رمز تأكيد حسابك في عربيتي',

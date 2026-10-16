@@ -40,6 +40,9 @@ const schema = z
         message: 'must be false or a positive number of proxies',
       }),
 
+    /** Where uploaded photos are kept, served under /uploads. */
+    UPLOADS_DIR: z.string().default('uploads'),
+
     MAIL_HOST: z.string().default(''),
     MAIL_PORT: z.coerce.number().int().positive().default(587),
     MAIL_SECURE: booleanString,

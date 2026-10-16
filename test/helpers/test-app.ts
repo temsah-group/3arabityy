@@ -1,3 +1,7 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose, { type Connection } from 'mongoose';
 import request from 'supertest';
@@ -34,7 +38,9 @@ export type TestApp = {
 
 export async function startTestApp(): Promise<TestApp> {
   const mongo = await MongoMemoryServer.create();
+  const uploads = await mkdtemp(path.join(tmpdir(), 'arabity-uploads-'));
   const env = loadEnv({
+    UPLOADS_DIR: uploads,
     NODE_ENV: 'test',
     MONGO_URI: mongo.getUri('arabity-test'),
     JWT_ACCESS_SECRET: 'test-access-secret-0123456789-abcdefghij',
@@ -58,6 +64,7 @@ export async function startTestApp(): Promise<TestApp> {
     async close() {
       await connection.close();
       await mongo.stop();
+      await rm(uploads, { recursive: true, force: true });
     },
   };
 }

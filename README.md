@@ -35,7 +35,9 @@ src/
   middleware/        authenticate, language, rate limit, error handler
   modules/
     auth/            register, login, OTP, password reset, sessions, tokens
-    users/           user model, public user shape, profile routes
+    users/           user model, public user shape, profile, password, photo
+                     and account deletion routes; photos on disk under
+                     UPLOADS_DIR (served at /uploads) until object storage
     mail/            SMTP mailer and the console mailer for development
     health/          GET /health
 test/                end-to-end tests with supertest
@@ -64,6 +66,10 @@ Failure: `{ "success": false, "message": "...", "code": "SOME_CODE", ...details 
 | POST | `/auth/forgot-password` | `identifier` | Same answer whether or not the email exists. |
 | POST | `/auth/reset-password` | `resetToken, newPassword, confirmPassword` | Signs the user out on every device. |
 | GET / PATCH | `/users/me` | `fullName?, phone?` (PATCH) | Bearer. |
+| PATCH | `/users/me/password` | `currentPassword, newPassword, confirmPassword` | Bearer. Keeps this session, signs out the others. A wrong current password is `400 WRONG_PASSWORD`, never 401. |
+| DELETE | `/users/me` | `password` | Bearer. Deletes the account, its sessions, codes and photo. |
+| POST | `/users/me/photo` | multipart, one image in `photo` | Bearer. JPEG, PNG or WebP (checked by content), up to 5 MB. Returns the user; `profilePhotoUrl` is a path such as `/uploads/avatars/<uuid>.jpg` that the app joins to the server address. |
+| DELETE | `/users/me/photo` | | Bearer. Returns the user with `profilePhotoUrl: null`. |
 | GET | `/health` | — | `{ status, database }`, 503 when the database is down. |
 
 ## Security notes

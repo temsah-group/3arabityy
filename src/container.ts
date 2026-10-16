@@ -10,6 +10,8 @@ import { SessionsService } from './modules/auth/sessions.service.js';
 import { TokenService } from './modules/auth/tokens.js';
 import { createMailer, type Mailer } from './modules/mail/mailer.js';
 import { createUserModel } from './modules/users/user.model.js';
+import { AccountService } from './modules/users/account.service.js';
+import { PhotoStorage } from './modules/users/photo-storage.js';
 import { UsersService } from './modules/users/users.service.js';
 
 /** Builds every service by hand, so dependencies stay visible. Tests swap the mailer. */
@@ -36,6 +38,8 @@ export function createContainer(
     maxAttempts: env.OTP_MAX_ATTEMPTS,
   });
   const auth = new AuthService(users, sessions, tokens, otp, mailer, env);
+  const photos = new PhotoStorage(env.UPLOADS_DIR);
+  const account = new AccountService(users, models.User, sessions, models.Otp, photos);
 
   return {
     connection,
@@ -47,6 +51,8 @@ export function createContainer(
     tokens,
     otp,
     auth,
+    photos,
+    account,
     requireAuth: authenticate({ tokens, sessions, users }),
   };
 }

@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { language } from './middleware/language.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { UPLOADS_ROUTE } from './modules/users/photo-storage.js';
 import { usersRoutes } from './modules/users/users.routes.js';
 
 export const API_PREFIX = '/api/v1';
@@ -26,8 +27,14 @@ export function createApp(container: Container) {
   const api = Router();
   api.use('/health', healthRoutes(container.connection));
   api.use('/auth', authRoutes(container.auth, container.requireAuth));
-  api.use('/users', usersRoutes(container.users, container.requireAuth));
+  api.use('/users', usersRoutes(container.users, container.account, container.requireAuth));
   app.use(API_PREFIX, api);
+
+  // Uploaded photos. Names are random and never reused, so they cache for good.
+  app.use(
+    UPLOADS_ROUTE,
+    express.static(env.UPLOADS_DIR, { immutable: true, maxAge: '365d', index: false }),
+  );
 
   app.use(notFoundHandler);
   app.use(errorHandler);

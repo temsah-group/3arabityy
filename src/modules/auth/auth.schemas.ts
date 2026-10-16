@@ -10,7 +10,7 @@ const email = z
   .pipe(z.email('validation.email').max(254, 'validation.email'));
 
 // bcrypt reads at most 72 bytes; longer passwords would be silently cut.
-const password = z
+export const password = z
   .string('validation.required')
   .min(8, 'validation.passwordShort')
   .refine((value) => Buffer.byteLength(value) <= 72, 'validation.passwordLong');
