@@ -17,14 +17,18 @@ Status: ✅ built · 🔜 to build next.
 Success:
 
 ```json
-{ "success": true, "message": "تمت العملية بنجاح", "data": { } }
+{ "success": true, "message": "تمت العملية بنجاح", "data": {} }
 ```
 
 Failure:
 
 ```json
-{ "success": false, "message": "…", "code": "VALIDATION_FAILED",
-  "errors": [{ "field": "price", "message": "…" }] }
+{
+  "success": false,
+  "message": "…",
+  "code": "VALIDATION_FAILED",
+  "errors": [{ "field": "price", "message": "…" }]
+}
 ```
 
 The app shows `message` as is and branches on `code`. A wrong password on an
@@ -58,15 +62,15 @@ Every list takes `?cursor=<opaque>&limit=<1..50, default 20>` and returns:
 
 ### Enums (wire values)
 
-| Name | Values |
-|---|---|
-| `category` | `ENGINE`, `BRAKES`, `SUSPENSION`, `BODY`, `LIGHTS`, `FILTERS`, `TYRES` |
-| `condition` | `NEW`, `USED`, `IMPORTED` |
-| `origin` | `ORIGINAL`, `AFTERMARKET` (the part's `isOriginal`) |
-| `sort` | `NEWEST`, `PRICE_LOW`, `PRICE_HIGH` |
-| `notification.kind` | `FITS_YOUR_CAR`, `PRICE_DROP`, `LISTING`, `SYSTEM` |
-| `report.target` | `PART`, `SELLER` |
-| `report.reason` | `FAKE`, `WRONG_INFO`, `COUNTERFEIT`, `STOLEN`, `SCAM`, `UNREACHABLE`, `ABUSIVE`, `OTHER` |
+| Name                | Values                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `category`          | `ENGINE`, `BRAKES`, `SUSPENSION`, `ELECTRICAL`, `BODY`, `LIGHTS`, `FILTERS`, `TYRES`     |
+| `condition`         | `NEW`, `USED`, `IMPORTED`                                                                |
+| `origin`            | `ORIGINAL`, `AFTERMARKET` (the part's `isOriginal`)                                      |
+| `sort`              | `NEWEST`, `PRICE_LOW`, `PRICE_HIGH`                                                      |
+| `notification.kind` | `FITS_YOUR_CAR`, `PRICE_DROP`, `LISTING`, `SYSTEM`                                       |
+| `report.target`     | `PART`, `SELLER`                                                                         |
+| `report.reason`     | `FAKE`, `WRONG_INFO`, `COUNTERFEIT`, `STOLEN`, `SCAM`, `UNREACHABLE`, `ABUSIVE`, `OTHER` |
 
 Car makes and models (`brandId`, `modelId`, such as `toyota` / `corolla`) are
 the ids in the app's `car_catalog.dart`. The server validates against the same
@@ -141,9 +145,15 @@ list (`GET /vehicles` later serves it, 🔜).
 
 ```json
 {
-  "id": "6ad2…", "name": "…", "city": "القاهرة", "photoUrl": null,
-  "verified": true, "partsCount": 12, "categoriesCount": 3,
-  "firstListedAt": "…", "phone": "+201001234501"
+  "id": "6ad2…",
+  "name": "…",
+  "city": "القاهرة",
+  "photoUrl": null,
+  "verified": true,
+  "partsCount": 12,
+  "categoriesCount": 3,
+  "firstListedAt": "…",
+  "phone": "+201001234501"
 }
 ```
 
@@ -164,46 +174,46 @@ list (`GET /vehicles` later serves it, 🔜).
 
 ### Auth ✅ (`/auth`)
 
-| Method | Path | Body | Notes |
-|---|---|---|---|
-| POST | `/auth/register` | `fullName, identifier (email), phone, password, confirmPassword` | 201; emails a code |
-| POST | `/auth/login` | `identifier, password, rememberMe?` | `{ accessToken, refreshToken, user }`; `403 ACCOUNT_NOT_VERIFIED` sends a code |
-| POST | `/auth/verify-otp` | `identifier, otp, purpose: register \| password_reset` | reset gives `{ resetToken }` |
-| POST | `/auth/resend-otp` | `identifier, purpose` | `429 OTP_RESEND_TOO_SOON` with `retryAfterSeconds` |
-| POST | `/auth/forgot-password` | `identifier` | same answer for unknown emails |
-| POST | `/auth/reset-password` | `resetToken, newPassword, confirmPassword` | signs out everywhere |
-| POST | `/auth/refresh` | `refreshToken` | rotates; a replayed token ends the session |
-| POST | `/auth/logout` 🔒 | | |
+| Method | Path                    | Body                                                             | Notes                                                                          |
+| ------ | ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| POST   | `/auth/register`        | `fullName, identifier (email), phone, password, confirmPassword` | 201; emails a code                                                             |
+| POST   | `/auth/login`           | `identifier, password, rememberMe?`                              | `{ accessToken, refreshToken, user }`; `403 ACCOUNT_NOT_VERIFIED` sends a code |
+| POST   | `/auth/verify-otp`      | `identifier, otp, purpose: register \| password_reset`           | reset gives `{ resetToken }`                                                   |
+| POST   | `/auth/resend-otp`      | `identifier, purpose`                                            | `429 OTP_RESEND_TOO_SOON` with `retryAfterSeconds`                             |
+| POST   | `/auth/forgot-password` | `identifier`                                                     | same answer for unknown emails                                                 |
+| POST   | `/auth/reset-password`  | `resetToken, newPassword, confirmPassword`                       | signs out everywhere                                                           |
+| POST   | `/auth/refresh`         | `refreshToken`                                                   | rotates; a replayed token ends the session                                     |
+| POST   | `/auth/logout` 🔒       |                                                                  |                                                                                |
 
 ### Account ✅ (`/users/me`) 🔒
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| GET | `/users/me` | | User |
-| PATCH | `/users/me` | `fullName?, phone?` | User |
-| PATCH | `/users/me/password` | `currentPassword, newPassword, confirmPassword` | message; keeps this session, signs out others |
-| DELETE | `/users/me` | `password` | message; deletes the account, its parts, sessions, photo |
-| POST | `/users/me/photo` | multipart `photo` (JPEG/PNG/WebP ≤ 5 MB) | User |
-| DELETE | `/users/me/photo` | | User |
+| Method | Path                 | Body                                            | Returns                                                  |
+| ------ | -------------------- | ----------------------------------------------- | -------------------------------------------------------- |
+| GET    | `/users/me`          |                                                 | User                                                     |
+| PATCH  | `/users/me`          | `fullName?, phone?`                             | User                                                     |
+| PATCH  | `/users/me/password` | `currentPassword, newPassword, confirmPassword` | message; keeps this session, signs out others            |
+| DELETE | `/users/me`          | `password`                                      | message; deletes the account, its parts, sessions, photo |
+| POST   | `/users/me/photo`    | multipart `photo` (JPEG/PNG/WebP ≤ 5 MB)        | User                                                     |
+| DELETE | `/users/me/photo`    |                                                 | User                                                     |
 
 Deleting the account must also delete the user's parts and their photos,
 saved parts and reports they made (🔜 once those exist).
 
 ### Parts ✅
 
-| Method | Path | Auth | Body / query | Returns |
-|---|---|---|---|---|
-| GET | `/parts` | 👁 | see **Search** below | page of Part |
-| GET | `/parts/featured` | 👁 | `condition?, cars?, limit?` | `{ items: [Part] }` |
-| GET | `/parts/:id` | 👁 | | Part; counts a view unless it is the caller's own |
-| GET | `/parts/:id/similar` | 👁 | `limit?` | `{ items: [Part] }` (same category or same models, never itself, never sold) |
-| GET | `/parts/mine` | 🔒 | page; sold included | page of Part (with `stats`) |
-| POST | `/parts` | 🔒 | Part fields below | Part, 201 |
-| PATCH | `/parts/:id` | 🔒 seller | any Part fields below | Part |
-| DELETE | `/parts/:id` | 🔒 seller | | message; deletes its photos |
-| POST | `/parts/:id/sold` | 🔒 seller | `{ "sold": true \| false }` | Part |
-| POST | `/parts/:id/renew` | 🔒 seller | | Part with `listedAt` now and `isSold: false` |
-| POST | `/parts/:id/contact` | 👁 | `{ "channel": "CALL" \| "WHATSAPP" }` | 204; counts a contact unless it is the caller's own |
+| Method | Path                 | Auth      | Body / query                          | Returns                                                                      |
+| ------ | -------------------- | --------- | ------------------------------------- | ---------------------------------------------------------------------------- |
+| GET    | `/parts`             | 👁         | see **Search** below                  | page of Part                                                                 |
+| GET    | `/parts/featured`    | 👁         | `condition?, cars?, limit?`           | `{ items: [Part] }`                                                          |
+| GET    | `/parts/:id`         | 👁         |                                       | Part; counts a view unless it is the caller's own                            |
+| GET    | `/parts/:id/similar` | 👁         | `limit?`                              | `{ items: [Part] }` (same category or same models, never itself, never sold) |
+| GET    | `/parts/mine`        | 🔒        | page; sold included                   | page of Part (with `stats`)                                                  |
+| POST   | `/parts`             | 🔒        | Part fields below                     | Part, 201                                                                    |
+| PATCH  | `/parts/:id`         | 🔒 seller | any Part fields below                 | Part                                                                         |
+| DELETE | `/parts/:id`         | 🔒 seller |                                       | message; deletes its photos                                                  |
+| POST   | `/parts/:id/sold`    | 🔒 seller | `{ "sold": true \| false }`           | Part                                                                         |
+| POST   | `/parts/:id/renew`   | 🔒 seller |                                       | Part with `listedAt` now and `isSold: false`                                 |
+| POST   | `/parts/:id/contact` | 👁         | `{ "channel": "CALL" \| "WHATSAPP" }` | 204; counts a contact unless it is the caller's own                          |
 
 Part fields on create and edit:
 
@@ -227,16 +237,16 @@ and seller pages, but `GET /parts/:id` still returns them (with
 
 #### Search (`GET /parts`)
 
-| Query | Meaning |
-|---|---|
-| `q` | words, all must match name, part number (dashes ignored), make or model; Arabic letter forms and diacritics normalised (أ إ آ → ا, ة → ه, ى → ي) |
-| `category`, `condition`, `origin` | enums above |
-| `city` | governorate |
-| `minPrice`, `maxPrice` | whole pounds |
-| `cars` | fits any of these cars: `toyota:corolla:2016,hyundai:elantra:2015` |
-| `sort` | `NEWEST` (default), `PRICE_LOW`, `PRICE_HIGH` |
-| `sellerId` | only this seller's parts |
-| `cursor`, `limit` | paging |
+| Query                             | Meaning                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `q`                               | words, all must match name, part number (dashes ignored), make or model; Arabic letter forms and diacritics normalised (أ إ آ → ا, ة → ه, ى → ي) |
+| `category`, `condition`, `origin` | enums above                                                                                                                                      |
+| `city`                            | governorate                                                                                                                                      |
+| `minPrice`, `maxPrice`            | whole pounds                                                                                                                                     |
+| `cars`                            | fits any of these cars: `toyota:corolla:2016,hyundai:elantra:2015`                                                                               |
+| `sort`                            | `NEWEST` (default), `PRICE_LOW`, `PRICE_HIGH`                                                                                                    |
+| `sellerId`                        | only this seller's parts                                                                                                                         |
+| `cursor`, `limit`                 | paging                                                                                                                                           |
 
 Response adds `facets` on the first page, for the filter sheet:
 
@@ -247,41 +257,41 @@ Response adds `facets` on the first page, for the filter sheet:
 
 ### Uploads ✅ 🔒
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| POST | `/uploads/parts` | multipart `photo` (JPEG/PNG/WebP ≤ 8 MB) | `{ "path": "/uploads/parts/<uuid>.jpg" }` |
+| Method | Path             | Body                                     | Returns                                   |
+| ------ | ---------------- | ---------------------------------------- | ----------------------------------------- |
+| POST   | `/uploads/parts` | multipart `photo` (JPEG/PNG/WebP ≤ 8 MB) | `{ "path": "/uploads/parts/<uuid>.jpg" }` |
 
 Photos are uploaded one by one while the seller fills the form, then sent as
 `images` paths. Cleaning up uploads never used by a listing is still to do (🔜).
 
 ### Sellers 🔜 👁
 
-| Method | Path | Returns |
-|---|---|---|
-| GET | `/sellers/:id` | Seller |
-| GET | `/sellers/:id/parts` | page of Part (same query as `/parts`, `sellerId` fixed) |
+| Method | Path                 | Returns                                                 |
+| ------ | -------------------- | ------------------------------------------------------- |
+| GET    | `/sellers/:id`       | Seller                                                  |
+| GET    | `/sellers/:id/parts` | page of Part (same query as `/parts`, `sellerId` fixed) |
 
 ### Saved parts 🔜 🔒
 
-| Method | Path | Returns |
-|---|---|---|
-| GET | `/users/me/saved` | page of Part (sold ones included, marked) |
-| PUT | `/users/me/saved/:partId` | 204 |
-| DELETE | `/users/me/saved/:partId` | 204 |
-| POST | `/users/me/saved/sync` | body `{ "partIds": [] }` saved on the device while signed out; 204 |
+| Method | Path                      | Returns                                                            |
+| ------ | ------------------------- | ------------------------------------------------------------------ |
+| GET    | `/users/me/saved`         | page of Part (sold ones included, marked)                          |
+| PUT    | `/users/me/saved/:partId` | 204                                                                |
+| DELETE | `/users/me/saved/:partId` | 204                                                                |
+| POST   | `/users/me/saved/sync`    | body `{ "partIds": [] }` saved on the device while signed out; 204 |
 
 ### Notifications 🔜 🔒
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| GET | `/notifications` | | page of Notification, newest first, plus `unreadCount` |
-| POST | `/notifications/:id/read` | | 204 |
-| POST | `/notifications/read-all` | | 204 |
-| DELETE | `/notifications/:id` | | 204 |
-| GET | `/notifications/settings` | | `{ "fitsMyCar": true, "priceDrops": true, "news": false }` |
-| PUT | `/notifications/settings` | same shape | same |
-| PUT | `/notifications/devices/:token` | `{ "platform": "ios" \| "android" }` | 204; push token |
-| DELETE | `/notifications/devices/:token` | | 204; on sign-out |
+| Method | Path                            | Body                                 | Returns                                                    |
+| ------ | ------------------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| GET    | `/notifications`                |                                      | page of Notification, newest first, plus `unreadCount`     |
+| POST   | `/notifications/:id/read`       |                                      | 204                                                        |
+| POST   | `/notifications/read-all`       |                                      | 204                                                        |
+| DELETE | `/notifications/:id`            |                                      | 204                                                        |
+| GET    | `/notifications/settings`       |                                      | `{ "fitsMyCar": true, "priceDrops": true, "news": false }` |
+| PUT    | `/notifications/settings`       | same shape                           | same                                                       |
+| PUT    | `/notifications/devices/:token` | `{ "platform": "ios" \| "android" }` | 204; push token                                            |
+| DELETE | `/notifications/devices/:token` |                                      | 204; on sign-out                                           |
 
 The server sends:
 
@@ -296,16 +306,16 @@ The server sends:
 So "new part fits your car" can work, the server needs the user's cars. The
 app keeps them on the device and syncs them:
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| GET | `/users/me/cars` | | `{ "items": [{ "brandId", "modelId", "year" }] }` |
-| PUT | `/users/me/cars` | `{ "items": [...] }` (≤ 5) | same |
+| Method | Path             | Body                       | Returns                                           |
+| ------ | ---------------- | -------------------------- | ------------------------------------------------- |
+| GET    | `/users/me/cars` |                            | `{ "items": [{ "brandId", "modelId", "year" }] }` |
+| PUT    | `/users/me/cars` | `{ "items": [...] }` (≤ 5) | same                                              |
 
 ### Reports 🔜 🔒
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| POST | `/reports` | `{ "target": "PART" \| "SELLER", "targetId": "…", "reason": "SCAM", "details": "…"? }` | 201 |
+| Method | Path       | Body                                                                                   | Returns |
+| ------ | ---------- | -------------------------------------------------------------------------------------- | ------- |
+| POST   | `/reports` | `{ "target": "PART" \| "SELLER", "targetId": "…", "reason": "SCAM", "details": "…"? }` | 201     |
 
 One report per user and target (`409 ALREADY_REPORTED` on a repeat).
 `details` is required (≥ 5 chars) for `OTHER`. Reasons must suit the target:
@@ -320,11 +330,11 @@ part-only `FAKE, WRONG_INFO, COUNTERFEIT, STOLEN`; seller-only
 
 ## 4. New error codes
 
-| Code | Status | When |
-|---|---|---|
-| `PART_NOT_FOUND` | 404 | unknown or deleted part |
-| `NOT_PART_OWNER` | 403 | editing someone else's part |
-| `TOO_MANY_PHOTOS` | 400 | more than 8 images |
-| `UPLOAD_NOT_OWNED` | 400 | an image path the caller did not upload |
-| `ALREADY_REPORTED` | 409 | second report of the same target |
-| `TOO_MANY_CARS` | 400 | more than 5 cars |
+| Code               | Status | When                                    |
+| ------------------ | ------ | --------------------------------------- |
+| `PART_NOT_FOUND`   | 404    | unknown or deleted part                 |
+| `NOT_PART_OWNER`   | 403    | editing someone else's part             |
+| `TOO_MANY_PHOTOS`  | 400    | more than 8 images                      |
+| `UPLOAD_NOT_OWNED` | 400    | an image path the caller did not upload |
+| `ALREADY_REPORTED` | 409    | second report of the same target        |
+| `TOO_MANY_CARS`    | 400    | more than 5 cars                        |

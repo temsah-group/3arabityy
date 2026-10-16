@@ -14,6 +14,14 @@ npm run dev            # http://localhost:3000/api/v1
 
 With `MAIL_HOST` empty, emails (and their codes) are printed to the console instead of being sent. Production refuses to start without SMTP.
 
+To try the app without Atlas or a network:
+
+```bash
+npm run dev:memory     # in-memory MongoDB, filled with the app's sample parts
+```
+
+It starts empty each time and seeds one confirmed account per sample seller: `seller01@example.com` … `seller11@example.com`, password `Password123`. Codes are printed, never emailed. The sample parts come from the app (`src/dev/sample-parts.json`, exported from `mock_parts.dart`).
+
 ```bash
 npm run typecheck
 npm test               # end-to-end, against an in-memory MongoDB

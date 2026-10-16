@@ -1,0 +1,456 @@
+[
+  {
+    "id": "p1",
+    "name": "طقم تيل فرامل أمامي",
+    "category": "BRAKES",
+    "condition": "NEW",
+    "isOriginal": true,
+    "price": 1250,
+    "oldPrice": 1450,
+    "partNumber": "04465-02220",
+    "description": "طقم تيل أصلي تويوتا في الكرتونة، مناسب للعجلتين الأماميتين. ضمان 6 شهور من المحل.",
+    "images": [
+      "https://images.unsplash.com/photo-1696494561430-de087dd0bd69?w=600&q=70&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1760317890322-364a810cd4da?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "toyota",
+        "modelId": "corolla",
+        "fromYear": 2014,
+        "toYear": 2026
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234501",
+    "isFeatured": true,
+    "isSold": false,
+    "listedAt": "2026-10-13T21:00:00.000Z",
+    "seller": {
+      "id": "seller-01",
+      "name": "الأمانة لقطع الغيار",
+      "phone": "+201001234501",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p2",
+    "name": "فانوس أمامي يمين LED",
+    "category": "LIGHTS",
+    "condition": "IMPORTED",
+    "isOriginal": true,
+    "price": 4800,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "فانوس LED استيراد من الخليج، الزجاج سليم بدون خدوش والكهرباء شغالة 100%. متاح تجربة قبل الاستلام.",
+    "images": [
+      "https://images.unsplash.com/photo-1556448851-9359658faa54?w=600&q=70&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "hyundai",
+        "modelId": "elantra",
+        "fromYear": 2016,
+        "toYear": 2020
+      }
+    ],
+    "city": "الجيزة",
+    "phone": "+201001234502",
+    "isFeatured": true,
+    "isSold": false,
+    "listedAt": "2026-10-12T21:00:00.000Z",
+    "seller": {
+      "id": "seller-02",
+      "name": "مستورد الخليج",
+      "phone": "+201001234502",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p3",
+    "name": "مساعدين خلفي (زوج)",
+    "category": "SUSPENSION",
+    "condition": "NEW",
+    "isOriginal": false,
+    "price": 2600,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "زوج مساعدين خلفي جديد، ماركة كورية. التركيب متاح في المحل بسعر رمزي.",
+    "images": [
+      "https://images.unsplash.com/photo-1760836395716-7dd00b71311a?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "kia",
+        "modelId": "cerato",
+        "fromYear": 2013,
+        "toYear": 2018
+      },
+      {
+        "brandId": "hyundai",
+        "modelId": "elantra",
+        "fromYear": 2011,
+        "toYear": 2016
+      }
+    ],
+    "city": "الإسكندرية",
+    "phone": "+201001234503",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-11T21:00:00.000Z",
+    "seller": {
+      "id": "seller-03",
+      "name": "النور أوتو",
+      "phone": "+201001234503",
+      "photoUrl": null,
+      "verified": false
+    }
+  },
+  {
+    "id": "p4",
+    "name": "موتور كامل 1.6",
+    "category": "ENGINE",
+    "condition": "IMPORTED",
+    "isOriginal": true,
+    "price": 68000,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "موتور 1.6 ياباني استيراد، ماشي 60 ألف كم بالكشف. بيتباع بالكمبروسر والدينامو. ضمان تشغيل شهر.",
+    "images": [
+      "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&q=70&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1527383418406-f85a3b146499?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "toyota",
+        "modelId": "corolla",
+        "fromYear": 2008,
+        "toYear": 2013
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234504",
+    "isFeatured": true,
+    "isSold": false,
+    "listedAt": "2026-10-10T21:00:00.000Z",
+    "seller": {
+      "id": "seller-04",
+      "name": "ياباني أصلي - شبرا",
+      "phone": "+201001234504",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p5",
+    "name": "كبوت أمامي",
+    "category": "BODY",
+    "condition": "USED",
+    "isOriginal": true,
+    "price": 3200,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "كبوت أصلي مستعمل، لونه فضي وبه خدش بسيط من الجنب. محتاج دهان خفيف.",
+    "images": [
+      "https://images.unsplash.com/photo-1539799139339-50c5fe1e2b1b?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "nissan",
+        "modelId": "sunny",
+        "fromYear": 2011,
+        "toYear": 2026
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234505",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-13T21:00:00.000Z",
+    "seller": {
+      "id": "seller-05",
+      "name": "تشليح الحرفيين",
+      "phone": "+201001234505",
+      "photoUrl": null,
+      "verified": false
+    }
+  },
+  {
+    "id": "p6",
+    "name": "فلتر زيت + فلتر هواء",
+    "category": "FILTERS",
+    "condition": "NEW",
+    "isOriginal": false,
+    "price": 450,
+    "oldPrice": 520,
+    "partNumber": null,
+    "description": "فلتر زيت وفلتر هواء جديد، طقم كامل للصيانة الدورية.",
+    "images": [
+      "https://images.unsplash.com/photo-1777118947168-b6e806cb80cf?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "hyundai",
+        "modelId": "accent",
+        "fromYear": 2010,
+        "toYear": 2026
+      },
+      {
+        "brandId": "hyundai",
+        "modelId": "verna",
+        "fromYear": 2008,
+        "toYear": 2019
+      }
+    ],
+    "city": "الدقهلية",
+    "phone": "+201001234506",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-14T21:00:00.000Z",
+    "seller": {
+      "id": "seller-06",
+      "name": "زيوت مصر",
+      "phone": "+201001234506",
+      "photoUrl": null,
+      "verified": false
+    }
+  },
+  {
+    "id": "p7",
+    "name": "دينامو شحن",
+    "category": "ELECTRICAL",
+    "condition": "USED",
+    "isOriginal": true,
+    "price": 1900,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "دينامو أصلي مستعمل، متجرب على عربية وشغال كويس. ضمان أسبوعين.",
+    "images": [
+      "https://images.unsplash.com/photo-1757547570448-04946db22218?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "chevrolet",
+        "modelId": "lanos",
+        "fromYear": 2000,
+        "toYear": 2016
+      }
+    ],
+    "city": "الغربية",
+    "phone": "+201001234507",
+    "isFeatured": true,
+    "isSold": false,
+    "listedAt": "2026-10-09T21:00:00.000Z",
+    "seller": {
+      "id": "seller-07",
+      "name": "كهرباء سيارات الشريف",
+      "phone": "+201001234507",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p8",
+    "name": "طقم 4 كاوتش مقاس 205/55/16",
+    "category": "TYRES",
+    "condition": "NEW",
+    "isOriginal": false,
+    "price": 14400,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "4 كاوتش جديد إنتاج 2026، الطقم بالتركيب والترصيص.",
+    "images": [
+      "https://images.unsplash.com/photo-1571335746824-742511d49bce?w=600&q=70&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1444947295498-07f60c19a4ff?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "toyota",
+        "modelId": "corolla",
+        "fromYear": 2008,
+        "toYear": 2026
+      },
+      {
+        "brandId": "kia",
+        "modelId": "cerato",
+        "fromYear": 2009,
+        "toYear": 2026
+      },
+      {
+        "brandId": "hyundai",
+        "modelId": "elantra",
+        "fromYear": 2008,
+        "toYear": 2026
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234508",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-12T21:00:00.000Z",
+    "seller": {
+      "id": "seller-08",
+      "name": "عالم الكاوتش",
+      "phone": "+201001234508",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p9",
+    "name": "جيربوكس أوتوماتيك",
+    "category": "ENGINE",
+    "condition": "IMPORTED",
+    "isOriginal": true,
+    "price": 42000,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "جيربوكس أوتوماتيك كوري استيراد، نضيف ومتجرب. بيتباع بالكمبيوتر بتاعه.",
+    "images": [
+      "https://images.unsplash.com/photo-1614447428943-52ec0bdbc7aa?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "kia",
+        "modelId": "sportage",
+        "fromYear": 2016,
+        "toYear": 2021
+      }
+    ],
+    "city": "الجيزة",
+    "phone": "+201001234509",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-08T21:00:00.000Z",
+    "seller": {
+      "id": "seller-09",
+      "name": "كوري استيراد",
+      "phone": "+201001234509",
+      "photoUrl": null,
+      "verified": false
+    }
+  },
+  {
+    "id": "p10",
+    "name": "مراية جانبية شمال كهرباء",
+    "category": "BODY",
+    "condition": "USED",
+    "isOriginal": false,
+    "price": 1100,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "مراية شمال كهرباء مستعملة، الزجاج والموتور سليمين.",
+    "images": [
+      "https://images.unsplash.com/photo-1710079230507-f07eadefabb5?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "mitsubishi",
+        "modelId": "lancer",
+        "fromYear": 2008,
+        "toYear": 2017
+      }
+    ],
+    "city": "الإسكندرية",
+    "phone": "+201001234510",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-11T21:00:00.000Z",
+    "seller": {
+      "id": "seller-10",
+      "name": "تشليح أبو العلا",
+      "phone": "+201001234510",
+      "photoUrl": null,
+      "verified": false
+    }
+  },
+  {
+    "id": "p11",
+    "name": "بطارية 70 أمبير",
+    "category": "ELECTRICAL",
+    "condition": "NEW",
+    "isOriginal": false,
+    "price": 3900,
+    "oldPrice": null,
+    "partNumber": null,
+    "description": "بطارية 70 أمبير جديدة، ضمان سنة. التركيب مجاناً في المحل.",
+    "images": [
+      "https://images.unsplash.com/photo-1676337167752-2062c6ca7366?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "renault",
+        "modelId": "logan",
+        "fromYear": 2008,
+        "toYear": 2026
+      },
+      {
+        "brandId": "nissan",
+        "modelId": "sunny",
+        "fromYear": 2011,
+        "toYear": 2026
+      },
+      {
+        "brandId": "fiat",
+        "modelId": "tipo",
+        "fromYear": 2016,
+        "toYear": 2026
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234511",
+    "isFeatured": true,
+    "isSold": false,
+    "listedAt": "2026-10-13T21:00:00.000Z",
+    "seller": {
+      "id": "seller-11",
+      "name": "باور للبطاريات",
+      "phone": "+201001234511",
+      "photoUrl": null,
+      "verified": true
+    }
+  },
+  {
+    "id": "p12",
+    "name": "طقم سير كاتينة",
+    "category": "ENGINE",
+    "condition": "NEW",
+    "isOriginal": true,
+    "price": 2350,
+    "oldPrice": null,
+    "partNumber": "24410-2B000",
+    "description": "طقم سير كاتينة أصلي بالبلي والشداد، رقم القطعة موضح.",
+    "images": [
+      "https://images.unsplash.com/photo-1584741621183-bb35de119593?w=600&q=70&auto=format&fit=crop"
+    ],
+    "fitments": [
+      {
+        "brandId": "hyundai",
+        "modelId": "accent",
+        "fromYear": 2011,
+        "toYear": 2026
+      },
+      {
+        "brandId": "kia",
+        "modelId": "cerato",
+        "fromYear": 2009,
+        "toYear": 2018
+      }
+    ],
+    "city": "القاهرة",
+    "phone": "+201001234501",
+    "isFeatured": false,
+    "isSold": false,
+    "listedAt": "2026-10-14T21:00:00.000Z",
+    "seller": {
+      "id": "seller-01",
+      "name": "الأمانة لقطع الغيار",
+      "phone": "+201001234501",
+      "photoUrl": null,
+      "verified": true
+    }
+  }
+]

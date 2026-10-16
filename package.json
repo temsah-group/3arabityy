@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "dev:memory": "tsx watch --env-file-if-exists=.env src/dev/memory-server.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

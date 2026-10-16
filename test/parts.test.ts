@@ -395,3 +395,22 @@ describe('managing a listing', () => {
     void seller;
   });
 });
+
+describe('sample data', () => {
+  it('seeds every sample part, findable and signed in as its seller', async () => {
+    const { seedSampleData, SAMPLE_PASSWORD } = await import('../src/dev/seed.js');
+    const seeded = await seedSampleData(app.container);
+    const all = await list('?limit=50');
+    expect(all.total).toBe(seeded.parts);
+    expect((await list('?category=ELECTRICAL')).items.length).toBeGreaterThan(0);
+    const login = await app.api
+      .post('/api/v1/auth/login')
+      .send({ identifier: 'seller01@example.com', password: SAMPLE_PASSWORD })
+      .expect(200);
+    const mine = await app.api
+      .get('/api/v1/parts/mine')
+      .set(auth(login.body.data.accessToken as string))
+      .expect(200);
+    expect(mine.body.data.items.length).toBeGreaterThan(0);
+  });
+});
