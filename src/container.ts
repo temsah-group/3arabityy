@@ -1,7 +1,7 @@
 import type { Connection } from 'mongoose';
 
 import type { Env } from './config/env.js';
-import { authenticate } from './middleware/authenticate.js';
+import { authenticate, optionalAuthenticate } from './middleware/authenticate.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { OtpService } from './modules/auth/otp.service.js';
 import { createOtpModel } from './modules/auth/otp.model.js';
@@ -9,6 +9,9 @@ import { createRefreshTokenModel } from './modules/auth/session.model.js';
 import { SessionsService } from './modules/auth/sessions.service.js';
 import { TokenService } from './modules/auth/tokens.js';
 import { createMailer, type Mailer } from './modules/mail/mailer.js';
+import { createPartModel } from './modules/parts/part.model.js';
+import { PartsService } from './modules/parts/parts.service.js';
+import { createUploadModel } from './modules/parts/upload.model.js';
 import { createUserModel } from './modules/users/user.model.js';
 import { AccountService } from './modules/users/account.service.js';
 import { PhotoStorage } from './modules/users/photo-storage.js';
@@ -24,6 +27,8 @@ export function createContainer(
     User: createUserModel(connection),
     RefreshToken: createRefreshTokenModel(connection),
     Otp: createOtpModel(connection),
+    Part: createPartModel(connection),
+    Upload: createUploadModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -39,7 +44,9 @@ export function createContainer(
   });
   const auth = new AuthService(users, sessions, tokens, otp, mailer, env);
   const photos = new PhotoStorage(env.UPLOADS_DIR);
-  const account = new AccountService(users, models.User, sessions, models.Otp, photos);
+  const parts = new PartsService(models.Part, models.Upload, models.User, photos);
+  const account = new AccountService(users, models.User, sessions, models.Otp, photos, parts);
+  const requireAuth = authenticate({ tokens, sessions, users });
 
   return {
     connection,
@@ -52,8 +59,10 @@ export function createContainer(
     otp,
     auth,
     photos,
+    parts,
     account,
-    requireAuth: authenticate({ tokens, sessions, users }),
+    requireAuth,
+    optionalAuth: optionalAuthenticate(requireAuth),
   };
 }
 

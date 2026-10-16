@@ -9,7 +9,16 @@ import { badRequest, ErrorCode } from './errors.js';
  * errors come back in the caller's language, first one as the headline.
  */
 export function parseBody<S extends z.ZodType>(schema: S, req: Request): z.infer<S> {
-  const result = schema.safeParse(req.body ?? {});
+  return parseInput(schema, req.body ?? {}, req);
+}
+
+/** Like [parseBody], for the query string. */
+export function parseQuery<S extends z.ZodType>(schema: S, req: Request): z.infer<S> {
+  return parseInput(schema, req.query ?? {}, req);
+}
+
+function parseInput<S extends z.ZodType>(schema: S, input: unknown, req: Request): z.infer<S> {
+  const result = schema.safeParse(input);
   if (result.success) return result.data;
 
   const errors = result.error.issues.map((issue) => {

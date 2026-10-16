@@ -189,7 +189,7 @@ list (`GET /vehicles` later serves it, 🔜).
 Deleting the account must also delete the user's parts and their photos,
 saved parts and reports they made (🔜 once those exist).
 
-### Parts 🔜
+### Parts ✅
 
 | Method | Path | Auth | Body / query | Returns |
 |---|---|---|---|---|
@@ -245,14 +245,14 @@ Response adds `facets` on the first page, for the filter sheet:
   "facets": { "cities": ["القاهرة", "الجيزة"], "maxPrice": 68000 } }
 ```
 
-### Uploads 🔜 🔒
+### Uploads ✅ 🔒
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | POST | `/uploads/parts` | multipart `photo` (JPEG/PNG/WebP ≤ 8 MB) | `{ "path": "/uploads/parts/<uuid>.jpg" }` |
 
 Photos are uploaded one by one while the seller fills the form, then sent as
-`images` paths. Unused uploads older than a day are cleaned up.
+`images` paths. Cleaning up uploads never used by a listing is still to do (🔜).
 
 ### Sellers 🔜 👁
 

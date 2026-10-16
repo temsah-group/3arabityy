@@ -1,0 +1,240 @@
+[
+  {
+    "id": "toyota",
+    "nameAr": "تويوتا",
+    "nameEn": "Toyota",
+    "models": [
+      {
+        "id": "corolla",
+        "nameAr": "كورولا",
+        "nameEn": "Corolla",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "yaris",
+        "nameAr": "ياريس",
+        "nameEn": "Yaris",
+        "fromYear": 2010,
+        "toYear": null
+      },
+      {
+        "id": "fortuner",
+        "nameAr": "فورتشنر",
+        "nameEn": "Fortuner",
+        "fromYear": 2012,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "hyundai",
+    "nameAr": "هيونداي",
+    "nameEn": "Hyundai",
+    "models": [
+      {
+        "id": "elantra",
+        "nameAr": "إلنترا",
+        "nameEn": "Elantra",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "accent",
+        "nameAr": "أكسنت",
+        "nameEn": "Accent",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "tucson",
+        "nameAr": "توسان",
+        "nameEn": "Tucson",
+        "fromYear": 2010,
+        "toYear": null
+      },
+      {
+        "id": "verna",
+        "nameAr": "فيرنا",
+        "nameEn": "Verna",
+        "fromYear": 2008,
+        "toYear": 2019
+      }
+    ]
+  },
+  {
+    "id": "kia",
+    "nameAr": "كيا",
+    "nameEn": "Kia",
+    "models": [
+      {
+        "id": "cerato",
+        "nameAr": "سيراتو",
+        "nameEn": "Cerato",
+        "fromYear": 2009,
+        "toYear": null
+      },
+      {
+        "id": "sportage",
+        "nameAr": "سبورتاج",
+        "nameEn": "Sportage",
+        "fromYear": 2010,
+        "toYear": null
+      },
+      {
+        "id": "picanto",
+        "nameAr": "بيكانتو",
+        "nameEn": "Picanto",
+        "fromYear": 2011,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "nissan",
+    "nameAr": "نيسان",
+    "nameEn": "Nissan",
+    "models": [
+      {
+        "id": "sunny",
+        "nameAr": "صني",
+        "nameEn": "Sunny",
+        "fromYear": 2011,
+        "toYear": null
+      },
+      {
+        "id": "qashqai",
+        "nameAr": "قشقاي",
+        "nameEn": "Qashqai",
+        "fromYear": 2014,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "chevrolet",
+    "nameAr": "شيفروليه",
+    "nameEn": "Chevrolet",
+    "models": [
+      {
+        "id": "lanos",
+        "nameAr": "لانوس",
+        "nameEn": "Lanos",
+        "fromYear": 2000,
+        "toYear": 2016
+      },
+      {
+        "id": "aveo",
+        "nameAr": "أفيو",
+        "nameEn": "Aveo",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "optra",
+        "nameAr": "أوبترا",
+        "nameEn": "Optra",
+        "fromYear": 2008,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "mitsubishi",
+    "nameAr": "ميتسوبيشي",
+    "nameEn": "Mitsubishi",
+    "models": [
+      {
+        "id": "lancer",
+        "nameAr": "لانسر",
+        "nameEn": "Lancer",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "attrage",
+        "nameAr": "أتراج",
+        "nameEn": "Attrage",
+        "fromYear": 2014,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "fiat",
+    "nameAr": "فيات",
+    "nameEn": "Fiat",
+    "models": [
+      {
+        "id": "tipo",
+        "nameAr": "تيبو",
+        "nameEn": "Tipo",
+        "fromYear": 2016,
+        "toYear": null
+      },
+      {
+        "id": "128",
+        "nameAr": "128",
+        "nameEn": "128",
+        "fromYear": 1990,
+        "toYear": 2009
+      }
+    ]
+  },
+  {
+    "id": "renault",
+    "nameAr": "رينو",
+    "nameEn": "Renault",
+    "models": [
+      {
+        "id": "logan",
+        "nameAr": "لوجان",
+        "nameEn": "Logan",
+        "fromYear": 2008,
+        "toYear": null
+      },
+      {
+        "id": "megane",
+        "nameAr": "ميجان",
+        "nameEn": "Megane",
+        "fromYear": 2010,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "skoda",
+    "nameAr": "سكودا",
+    "nameEn": "Skoda",
+    "models": [
+      {
+        "id": "octavia",
+        "nameAr": "أوكتافيا",
+        "nameEn": "Octavia",
+        "fromYear": 2008,
+        "toYear": null
+      }
+    ]
+  },
+  {
+    "id": "mg",
+    "nameAr": "إم جي",
+    "nameEn": "MG",
+    "models": [
+      {
+        "id": "mg5",
+        "nameAr": "MG 5",
+        "nameEn": "MG 5",
+        "fromYear": 2020,
+        "toYear": null
+      },
+      {
+        "id": "zs",
+        "nameAr": "ZS",
+        "nameEn": "ZS",
+        "fromYear": 2019,
+        "toYear": null
+      }
+    ]
+  }
+]

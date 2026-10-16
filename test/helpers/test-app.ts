@@ -58,8 +58,12 @@ export async function startTestApp(): Promise<TestApp> {
     container,
     async reset() {
       mailer.sent.length = 0;
-      const { User, RefreshToken, Otp } = container.models;
-      await Promise.all([User.deleteMany({}), RefreshToken.deleteMany({}), Otp.deleteMany({})]);
+      // Every collection, so each test starts empty.
+      await Promise.all(
+        Object.values(container.connection.collections).map((collection) =>
+          collection.deleteMany({}),
+        ),
+      );
     },
     async close() {
       await connection.close();

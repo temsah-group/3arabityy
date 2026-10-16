@@ -7,6 +7,18 @@ import { AccountStatus } from '../modules/users/user.model.js';
 import type { UsersService } from '../modules/users/users.service.js';
 
 /**
+ * Like [authenticate] for routes that work signed out: with no
+ * `Authorization` header the request goes on as a guest; a header that is
+ * there must be valid.
+ */
+export function optionalAuthenticate(required: RequestHandler): RequestHandler {
+  return (req, res, next) => {
+    if (!req.headers.authorization) return next();
+    return required(req, res, next);
+  };
+}
+
+/**
  * Accepts `Authorization: Bearer <access token>` for a live session of an
  * active account, and sets `req.auth`.
  */

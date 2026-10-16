@@ -35,6 +35,8 @@ const userSchema = new Schema(
     },
     emailVerifiedAt: { type: Date, default: null },
     profilePhotoUrl: { type: String, default: null },
+    /** Identity checked by 3arabity; shown as a badge on their parts. */
+    isVerifiedSeller: { type: Boolean, default: false },
 
     // Brute-force guard for password sign-in.
     failedLoginAttempts: { type: Number, default: 0 },

@@ -32,6 +32,11 @@ export const ErrorCode = {
   PHOTO_REQUIRED: 'PHOTO_REQUIRED',
   PHOTO_INVALID: 'PHOTO_INVALID',
   PHOTO_TOO_LARGE: 'PHOTO_TOO_LARGE',
+
+  PART_NOT_FOUND: 'PART_NOT_FOUND',
+  NOT_PART_OWNER: 'NOT_PART_OWNER',
+  TOO_MANY_PHOTOS: 'TOO_MANY_PHOTOS',
+  UPLOAD_NOT_OWNED: 'UPLOAD_NOT_OWNED',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

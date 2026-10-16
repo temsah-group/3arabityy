@@ -35,6 +35,10 @@ src/
   middleware/        authenticate, language, rate limit, error handler
   modules/
     auth/            register, login, OTP, password reset, sessions, tokens
+    catalog/         car makes and models and governorates (from the app),
+                     search-text normalisation
+    parts/           part and upload models, search with cursor paging,
+                     listing, editing, sold, renew, views and contacts
     users/           user model, public user shape, profile, password, photo
                      and account deletion routes; photos on disk under
                      UPLOADS_DIR (served at /uploads) until object storage
@@ -53,7 +57,11 @@ Failure: `{ "success": false, "message": "...", "code": "SOME_CODE", ...details 
 
 `message` is in the language of the `Accept-Language` header (`ar` by default, `en`). The app should branch on `code`, never on the text. Validation failures add `errors: [{ field, message }]`.
 
-## Auth endpoints (`/api/v1`)
+## Endpoints (`/api/v1`)
+
+The full contract the app reads, built and still to build, is in [`docs/api-contract.md`](docs/api-contract.md).
+
+### Auth and account
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
