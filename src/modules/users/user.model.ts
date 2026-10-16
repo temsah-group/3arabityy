@@ -12,6 +12,16 @@ export type AccountType = (typeof AccountType)[keyof typeof AccountType];
 export const AccountStatus = { ACTIVE: 'ACTIVE', SUSPENDED: 'SUSPENDED' } as const;
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
 
+/** One car of the user's garage; "a new part fits your car" goes by it. */
+const carSchema = new Schema(
+  {
+    brandId: { type: String, required: true },
+    modelId: { type: String, required: true },
+    year: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
 const userSchema = new Schema(
   {
     fullName: { type: String, required: true, trim: true, maxlength: 100 },
@@ -38,6 +48,15 @@ const userSchema = new Schema(
     /** Identity checked by 3arabity; shown as a badge on their parts. */
     isVerifiedSeller: { type: Boolean, default: false },
 
+    /** Up to five cars, in the order the app shows them. */
+    cars: { type: [carSchema], default: [] },
+    /** What the user wants to be told about. */
+    notificationSettings: {
+      fitsMyCar: { type: Boolean, default: true },
+      priceDrops: { type: Boolean, default: true },
+      news: { type: Boolean, default: false },
+    },
+
     // Brute-force guard for password sign-in.
     failedLoginAttempts: { type: Number, default: 0 },
     lockedUntil: { type: Date, default: null },
@@ -46,6 +65,7 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ 'cars.brandId': 1, 'cars.modelId': 1 });
 
 export type User = InferSchemaType<typeof userSchema>;
 export type UserDocument = HydratedDocument<User>;

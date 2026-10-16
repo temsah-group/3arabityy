@@ -169,6 +169,57 @@ const messages = {
     en: 'One of the photos was not uploaded from your account',
   },
   'parts.photoUploaded': { ar: 'تم رفع الصورة', en: 'Photo uploaded' },
+  'users.tooManyCars': { ar: 'الحد الأقصى {0} عربيات', en: 'Up to {0} cars' },
+  'users.carsSaved': { ar: 'تم حفظ عربياتك', en: 'Your cars are saved' },
+  'validation.car': {
+    ar: 'العربية أو سنة الموديل غير صحيحة',
+    en: 'The car or its year is not valid',
+  },
+  'notifications.notFound': {
+    ar: 'الإشعار ده مش موجود',
+    en: 'This notification does not exist',
+  },
+  'notifications.settingsSaved': {
+    ar: 'تم حفظ إعدادات الإشعارات',
+    en: 'Notification settings saved',
+  },
+  'notifications.fitsTitle': {
+    ar: 'قطعة جديدة تركب على عربيتك',
+    en: 'A new part fits your car',
+  },
+  'notifications.fitsBody': {
+    ar: '{0} بـ {1} جنيه في {2}',
+    en: '{0} for EGP {1} in {2}',
+  },
+  'notifications.priceDropTitle': {
+    ar: 'نزل سعر قطعة محفوظة',
+    en: 'A saved part got cheaper',
+  },
+  'notifications.priceDropBody': {
+    ar: '{0}: من {1} لـ {2} جنيه',
+    en: '{0}: from EGP {1} to EGP {2}',
+  },
+  'sellers.notFound': { ar: 'البائع ده مش موجود', en: 'This seller does not exist' },
+  'reports.sent': {
+    ar: 'شكراً على البلاغ، هنراجعه',
+    en: 'Thanks for the report. We will review it',
+  },
+  'reports.already': {
+    ar: 'بلّغت عن ده قبل كدا',
+    en: 'You already reported this',
+  },
+  'reports.self': {
+    ar: 'مينفعش تبلّغ عن نفسك أو عن إعلانك',
+    en: "You can't report yourself or your own listing",
+  },
+  'validation.reportReason': {
+    ar: 'اختار سبب البلاغ',
+    en: 'Choose a reason for the report',
+  },
+  'validation.reportDetails': {
+    ar: 'اكتب السبب في كلمتين',
+    en: 'Describe the reason in a few words',
+  },
   'validation.category': { ar: 'اختار القسم', en: 'Choose a category' },
   'validation.condition': { ar: 'اختار الحالة', en: 'Choose a condition' },
   'validation.partName': {

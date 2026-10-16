@@ -12,6 +12,15 @@ import { createMailer, type Mailer } from './modules/mail/mailer.js';
 import { createPartModel } from './modules/parts/part.model.js';
 import { PartsService } from './modules/parts/parts.service.js';
 import { createUploadModel } from './modules/parts/upload.model.js';
+import {
+  createDeviceModel,
+  createNotificationModel,
+} from './modules/notifications/notification.model.js';
+import { NotificationsService } from './modules/notifications/notifications.service.js';
+import { createReportModel, ReportsService } from './modules/reports/reports.js';
+import { createSavedPartModel } from './modules/saved/saved.model.js';
+import { SavedService } from './modules/saved/saved.service.js';
+import { SellersService } from './modules/sellers/sellers.routes.js';
 import { createUserModel } from './modules/users/user.model.js';
 import { AccountService } from './modules/users/account.service.js';
 import { PhotoStorage } from './modules/users/photo-storage.js';
@@ -29,6 +38,10 @@ export function createContainer(
     Otp: createOtpModel(connection),
     Part: createPartModel(connection),
     Upload: createUploadModel(connection),
+    SavedPart: createSavedPartModel(connection),
+    Notification: createNotificationModel(connection),
+    Device: createDeviceModel(connection),
+    Report: createReportModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -44,8 +57,31 @@ export function createContainer(
   });
   const auth = new AuthService(users, sessions, tokens, otp, mailer, env);
   const photos = new PhotoStorage(env.UPLOADS_DIR);
-  const parts = new PartsService(models.Part, models.Upload, models.User, photos);
-  const account = new AccountService(users, models.User, sessions, models.Otp, photos, parts);
+  const notifications = new NotificationsService(
+    models.Notification,
+    models.Device,
+    models.User,
+    models.SavedPart,
+  );
+  // Set once `saved` exists; parts only call it after a request.
+  let saved: SavedService | undefined;
+  const parts = new PartsService(models.Part, models.Upload, models.User, photos, {
+    listed: (part) => notifications.partListed(part),
+    priceDropped: (part, from) => notifications.priceDropped(part, from),
+    removed: async (ids) => {
+      await Promise.all([saved?.partsRemoved(ids), notifications.partsRemoved(ids)]);
+    },
+  });
+  saved = new SavedService(models.SavedPart, models.Part, parts);
+  const sellers = new SellersService(models.User, models.Part);
+  const reports = new ReportsService(models.Report, models.Part, models.User);
+  // Everything else a deleted account leaves behind goes with it.
+  const account = new AccountService(users, models.User, sessions, models.Otp, photos, [
+    parts,
+    saved,
+    notifications,
+    reports,
+  ]);
   const requireAuth = authenticate({ tokens, sessions, users });
 
   return {
@@ -60,6 +96,10 @@ export function createContainer(
     auth,
     photos,
     parts,
+    saved,
+    sellers,
+    reports,
+    notifications,
     account,
     requireAuth,
     optionalAuth: optionalAuthenticate(requireAuth),

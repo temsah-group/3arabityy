@@ -1,6 +1,8 @@
 import { Types, type QueryFilter } from 'mongoose';
 
 import { AppError, badRequest, ErrorCode, forbidden } from '../../common/http/errors.js';
+import { decodeCursor, encodeCursor } from '../../common/http/paging.js';
+import { logger } from '../../common/logger.js';
 import { normalizeSearchText, searchableText } from '../catalog/catalog.js';
 import type { PhotoStorage } from '../users/photo-storage.js';
 import type { UserModel } from '../users/user.model.js';
@@ -15,6 +17,13 @@ import {
   type UpdatePartInput,
 } from './parts.schemas.js';
 import type { UploadModel } from './upload.model.js';
+
+/** What other modules do when parts change; failures never fail the request. */
+export type PartEvents = {
+  listed?(part: PartDocument): Promise<void>;
+  priceDropped?(part: PartDocument, from: number): Promise<void>;
+  removed?(partIds: Types.ObjectId[]): Promise<void>;
+};
 
 type Page = { items: PublicPart[]; nextCursor: string | null; total?: number };
 
@@ -35,6 +44,7 @@ export class PartsService {
     private readonly uploads: UploadModel,
     private readonly users: UserModel,
     private readonly photos: PhotoStorage,
+    private readonly events: PartEvents = {},
   ) {}
 
   // ---- Reading ----
@@ -121,12 +131,14 @@ export class PartsService {
       searchText: searchableText({ ...input, sellerName: seller?.fullName }),
     });
     await this.claimPhotos(userId, part);
+    await this.emit(() => this.events.listed?.(part));
     return (await this.present([part], userId))[0]!;
   }
 
   async update(userId: string, id: string, input: UpdatePartInput): Promise<PublicPart> {
     const part = await this.owned(userId, id);
     const before = [...part.images];
+    const priceBefore = part.price;
     if (input.images) await this.assertPhotos(userId, input.images, before);
     if (input.oldPrice !== undefined || input.price !== undefined) {
       const price = input.price ?? part.price;
@@ -155,6 +167,9 @@ export class PartsService {
     await this.claimPhotos(userId, part);
     // Photos taken off the listing are deleted.
     await this.dropPhotos(before.filter((path) => !part.images.includes(path)));
+    if (part.price < priceBefore) {
+      await this.emit(() => this.events.priceDropped?.(part, priceBefore));
+    }
     return (await this.present([part], userId))[0]!;
   }
 
@@ -162,6 +177,7 @@ export class PartsService {
     const part = await this.owned(userId, id);
     await part.deleteOne();
     await this.dropPhotos(part.images);
+    await this.emit(() => this.events.removed?.([part._id]));
   }
 
   async setSold(userId: string, id: string, sold: boolean): Promise<PublicPart> {
@@ -197,9 +213,33 @@ export class PartsService {
     ]);
     await this.parts.deleteMany({ sellerId: owner }).exec();
     await this.dropPhotos([...parts.flatMap((part) => part.images), ...uploads.map((u) => u.path)]);
+    await this.emit(() => this.events.removed?.(parts.map((part) => part._id)));
+  }
+
+  // ---- For other modules ----
+
+  /** Throws `PART_NOT_FOUND` unless the part exists. */
+  async assertExists(id: string): Promise<void> {
+    await this.find(id);
+  }
+
+  /** The parts with [ids] that still exist, presented, in the order given. */
+  async presentIds(ids: Types.ObjectId[], viewerId?: string): Promise<PublicPart[]> {
+    const found = await this.parts.find({ _id: { $in: ids } }).exec();
+    const byId = new Map(found.map((part) => [part.id as string, part]));
+    const ordered = ids.map((id) => byId.get(id.toString())).filter((part) => part !== undefined);
+    return this.present(ordered, viewerId);
   }
 
   // ---- Helpers ----
+
+  private async emit(run: () => Promise<void> | undefined): Promise<void> {
+    try {
+      await run();
+    } catch (error) {
+      logger.error('A part event failed', { error: String(error) });
+    }
+  }
 
   private async find(id: string): Promise<PartDocument> {
     if (!Types.ObjectId.isValid(id)) throw notFound();
@@ -287,7 +327,7 @@ export class PartsService {
   ): Promise<Page> {
     const { field, direction } = SORTS[sortName];
     const query: QueryFilter<Part> = { ...filter };
-    const after = decodeCursor(cursor, field);
+    const after = decodeCursor(cursor, field === 'listedAt' ? 'date' : 'number');
     if (after) {
       const op = direction === -1 ? '$lt' : '$gt';
       query.$or = [
@@ -345,29 +385,4 @@ function fitsAny(cars: CarQuery): QueryFilter<Part> {
       },
     })),
   };
-}
-
-function encodeCursor(value: Date | number, id: string): string {
-  const v = value instanceof Date ? value.toISOString() : value;
-  return Buffer.from(JSON.stringify({ v, id })).toString('base64url');
-}
-
-function decodeCursor(
-  cursor: string | undefined,
-  field: string,
-): { value: Date | number; id: Types.ObjectId } | null {
-  if (!cursor) return null;
-  try {
-    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString()) as {
-      v: unknown;
-      id: unknown;
-    };
-    if (typeof parsed.id !== 'string' || !Types.ObjectId.isValid(parsed.id)) throw new Error();
-    const value = field === 'listedAt' ? new Date(String(parsed.v)) : Number(parsed.v);
-    if (value instanceof Date ? Number.isNaN(value.getTime()) : !Number.isFinite(value))
-      throw new Error();
-    return { value, id: new Types.ObjectId(parsed.id) };
-  } catch {
-    throw badRequest(ErrorCode.VALIDATION_FAILED, 'validation.query');
-  }
 }

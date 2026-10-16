@@ -6,6 +6,7 @@ import { AppError, badRequest, ErrorCode } from '../../common/http/errors.js';
 import { send } from '../../common/http/response.js';
 import { parseBody } from '../../common/http/validate.js';
 import { fullName, password, phone } from '../auth/auth.schemas.js';
+import { findModel, modelYears } from '../catalog/catalog.js';
 import type { AccountService } from './account.service.js';
 import { MAX_PHOTO_MB, photoExtension } from './photo-storage.js';
 import { presentUser } from './user.presenter.js';
@@ -26,6 +27,42 @@ const changePasswordSchema = z
     message: 'validation.passwordMismatch',
     path: ['confirmPassword'],
   });
+
+export const MAX_CARS = 5;
+
+/** The garage: cars from the catalog, each once, in a year the model was made. */
+const carsSchema = z.strictObject({
+  items: z
+    .array(
+      z
+        .strictObject({
+          brandId: z.string('validation.car'),
+          modelId: z.string('validation.car'),
+          year: z.number('validation.car').int('validation.car'),
+        })
+        .refine((car) => {
+          const model = findModel(car.brandId, car.modelId);
+          if (!model) return false;
+          const [first, last] = modelYears(model);
+          return car.year >= first && car.year <= last;
+        }, 'validation.car'),
+      'validation.car',
+    )
+    .refine(
+      (cars) =>
+        new Set(cars.map((car) => `${car.brandId}:${car.modelId}:${car.year}`)).size ===
+        cars.length,
+      'validation.car',
+    ),
+});
+
+const presentCars = (user: { cars?: { brandId: string; modelId: string; year: number }[] }) => ({
+  items: (user.cars ?? []).map((car) => ({
+    brandId: car.brandId,
+    modelId: car.modelId,
+    year: car.year,
+  })),
+});
 
 const deleteAccountSchema = z.strictObject({
   password: z.string('validation.required').min(1, 'validation.required'),
@@ -79,6 +116,21 @@ export function usersRoutes(
     const { password: current } = parseBody(deleteAccountSchema, req);
     await account.deleteAccount(req.auth!.userId, current);
     send(res, { message: 'users.accountDeleted' });
+  });
+
+  router.get('/me/cars', async (req, res) => {
+    send(res, { data: presentCars(await users.getById(req.auth!.userId)) });
+  });
+
+  router.put('/me/cars', async (req, res) => {
+    const { items } = parseBody(carsSchema, req);
+    if (items.length > MAX_CARS) {
+      throw badRequest(ErrorCode.TOO_MANY_CARS, 'users.tooManyCars', [MAX_CARS]);
+    }
+    const user = await users.getById(req.auth!.userId);
+    user.set('cars', items);
+    await user.save();
+    send(res, { message: 'users.carsSaved', data: presentCars(user) });
   });
 
   router.post('/me/photo', photoUpload, async (req, res) => {

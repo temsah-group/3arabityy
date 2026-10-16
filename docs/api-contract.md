@@ -264,14 +264,18 @@ Response adds `facets` on the first page, for the filter sheet:
 Photos are uploaded one by one while the seller fills the form, then sent as
 `images` paths. Cleaning up uploads never used by a listing is still to do (🔜).
 
-### Sellers 🔜 👁
+### Sellers ✅ 👁
 
 | Method | Path                 | Returns                                                 |
 | ------ | -------------------- | ------------------------------------------------------- |
 | GET    | `/sellers/:id`       | Seller                                                  |
 | GET    | `/sellers/:id/parts` | page of Part (same query as `/parts`, `sellerId` fixed) |
 
-### Saved parts 🔜 🔒
+Counts and `firstListedAt` cover parts for sale. `city` is where most of them
+are; `phone` is the number on the latest listing (null with no listings), never
+the account's own. Unknown id: `404 SELLER_NOT_FOUND`.
+
+### Saved parts ✅ 🔒
 
 | Method | Path                      | Returns                                                            |
 | ------ | ------------------------- | ------------------------------------------------------------------ |
@@ -280,7 +284,11 @@ Photos are uploaded one by one while the seller fills the form, then sent as
 | DELETE | `/users/me/saved/:partId` | 204                                                                |
 | POST   | `/users/me/saved/sync`    | body `{ "partIds": [] }` saved on the device while signed out; 204 |
 
-### Notifications 🔜 🔒
+`sync` takes up to 200 ids, oldest saved first; ids of parts that are gone are
+skipped. Deleted parts leave every saved list. Parts carry no `isSaved`: the
+app knows its saved ids from this list.
+
+### Notifications ✅ 🔒
 
 | Method | Path                            | Body                                 | Returns                                                    |
 | ------ | ------------------------------- | ------------------------------------ | ---------------------------------------------------------- |
@@ -293,15 +301,20 @@ Photos are uploaded one by one while the seller fills the form, then sent as
 | PUT    | `/notifications/devices/:token` | `{ "platform": "ios" \| "android" }` | 204; push token                                            |
 | DELETE | `/notifications/devices/:token` |                                      | 204; on sign-out                                           |
 
-The server sends:
+`title` and `body` come in the request's language. The server sends:
 
-- `FITS_YOUR_CAR` when a new part fits one of the user's cars (see Cars);
-- `PRICE_DROP` when a saved part's price goes down;
-- `LISTING` for news about the user's own parts (renewal reminders after 30
+- `FITS_YOUR_CAR` ✅ when a new part fits one of the user's cars (see Cars),
+  unless `fitsMyCar` is off; never to its seller;
+- `PRICE_DROP` ✅ when a saved part's price goes down, unless `priceDrops` is
+  off;
+- `LISTING` 🔜 for news about the user's own parts (renewal reminders after 30
   days, a part removed after reports);
-- `SYSTEM` for announcements.
+- `SYSTEM` 🔜 for announcements.
 
-### Cars (garage) 🔜 🔒
+Deleting a part deletes its notifications. Devices are stored; sending push
+waits for Firebase (🔜).
+
+### Cars (garage) ✅ 🔒
 
 So "new part fits your car" can work, the server needs the user's cars. The
 app keeps them on the device and syncs them:
@@ -311,7 +324,7 @@ app keeps them on the device and syncs them:
 | GET    | `/users/me/cars` |                            | `{ "items": [{ "brandId", "modelId", "year" }] }` |
 | PUT    | `/users/me/cars` | `{ "items": [...] }` (≤ 5) | same                                              |
 
-### Reports 🔜 🔒
+### Reports ✅ 🔒
 
 | Method | Path       | Body                                                                                   | Returns |
 | ------ | ---------- | -------------------------------------------------------------------------------------- | ------- |
@@ -320,7 +333,10 @@ app keeps them on the device and syncs them:
 One report per user and target (`409 ALREADY_REPORTED` on a repeat).
 `details` is required (≥ 5 chars) for `OTHER`. Reasons must suit the target:
 part-only `FAKE, WRONG_INFO, COUNTERFEIT, STOLEN`; seller-only
-`UNREACHABLE, ABUSIVE`; both `SCAM, OTHER`.
+`UNREACHABLE, ABUSIVE`; both `SCAM, OTHER`. A seller's `targetId` is their
+account id (the part's `seller.id`). Reporting one's own part or oneself is
+`400 CANNOT_REPORT_SELF`; an unknown target `404 PART_NOT_FOUND` or
+`SELLER_NOT_FOUND`.
 
 ### Health ✅
 
@@ -330,11 +346,13 @@ part-only `FAKE, WRONG_INFO, COUNTERFEIT, STOLEN`; seller-only
 
 ## 4. New error codes
 
-| Code               | Status | When                                    |
-| ------------------ | ------ | --------------------------------------- |
-| `PART_NOT_FOUND`   | 404    | unknown or deleted part                 |
-| `NOT_PART_OWNER`   | 403    | editing someone else's part             |
-| `TOO_MANY_PHOTOS`  | 400    | more than 8 images                      |
-| `UPLOAD_NOT_OWNED` | 400    | an image path the caller did not upload |
-| `ALREADY_REPORTED` | 409    | second report of the same target        |
-| `TOO_MANY_CARS`    | 400    | more than 5 cars                        |
+| Code                 | Status | When                                    |
+| -------------------- | ------ | --------------------------------------- |
+| `PART_NOT_FOUND`     | 404    | unknown or deleted part                 |
+| `NOT_PART_OWNER`     | 403    | editing someone else's part             |
+| `TOO_MANY_PHOTOS`    | 400    | more than 8 images                      |
+| `UPLOAD_NOT_OWNED`   | 400    | an image path the caller did not upload |
+| `ALREADY_REPORTED`   | 409    | second report of the same target        |
+| `TOO_MANY_CARS`      | 400    | more than 5 cars                        |
+| `SELLER_NOT_FOUND`   | 404    | unknown seller account                  |
+| `CANNOT_REPORT_SELF` | 400    | reporting one's own part or oneself     |

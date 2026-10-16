@@ -37,6 +37,11 @@ export const ErrorCode = {
   NOT_PART_OWNER: 'NOT_PART_OWNER',
   TOO_MANY_PHOTOS: 'TOO_MANY_PHOTOS',
   UPLOAD_NOT_OWNED: 'UPLOAD_NOT_OWNED',
+
+  TOO_MANY_CARS: 'TOO_MANY_CARS',
+  SELLER_NOT_FOUND: 'SELLER_NOT_FOUND',
+  ALREADY_REPORTED: 'ALREADY_REPORTED',
+  CANNOT_REPORT_SELF: 'CANNOT_REPORT_SELF',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

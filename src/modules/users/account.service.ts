@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 
 import { badRequest, ErrorCode } from '../../common/http/errors.js';
 import type { OtpModel } from '../auth/otp.model.js';
-import type { PartsService } from '../parts/parts.service.js';
 import type { SessionsService } from '../auth/sessions.service.js';
 import type { PhotoStorage } from './photo-storage.js';
 import type { UserDocument, UserModel } from './user.model.js';
@@ -19,7 +18,8 @@ export class AccountService {
     private readonly sessions: SessionsService,
     private readonly otps: OtpModel,
     private readonly photos: PhotoStorage,
-    private readonly parts: PartsService,
+    /** Modules holding what the user made: parts, saved parts, the inbox… */
+    private readonly owned: { deleteAllOf(userId: string): Promise<void> }[],
   ) {}
 
   /** Keeps this session; every other device has to sign in again. */
@@ -48,7 +48,7 @@ export class AccountService {
     }
     await Promise.all([
       this.sessions.deleteAll(userId),
-      this.parts.deleteAllOf(userId),
+      ...this.owned.map((module) => module.deleteAllOf(userId)),
       this.otps.deleteMany({ email: user.email }).exec(),
       this.photos.remove(user.profilePhotoUrl),
     ]);
