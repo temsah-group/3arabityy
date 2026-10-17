@@ -1,7 +1,10 @@
 import { AppShell, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
+  IconCar,
+  IconChartBar,
   IconChevronDown,
+  IconSpeakerphone,
   IconFlag,
   IconHistory,
   IconHome,
@@ -31,6 +34,7 @@ const links = [
   { to: '/reports', label: 'البلاغات', icon: IconFlag },
   { to: '/users', label: 'المستخدمين', icon: IconUsers },
   { to: '/parts', label: 'الإعلانات', icon: IconPackage },
+  { to: '/stats', label: 'الإحصائيات', icon: IconChartBar },
 ]
 
 export function Shell() {
@@ -40,6 +44,8 @@ export function Shell() {
   const visible = isOwner
     ? [
         ...links,
+        { to: '/announcements', label: 'رسايل للمستخدمين', icon: IconSpeakerphone },
+        { to: '/cars', label: 'العربيات', icon: IconCar },
         { to: '/settings', label: 'إعدادات التطبيق', icon: IconSettings },
         { to: '/audit', label: 'سجل العمليات', icon: IconHistory },
       ]

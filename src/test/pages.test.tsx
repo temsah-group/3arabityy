@@ -177,3 +177,108 @@ describe('settings', () => {
     expect(sent.sections.map((s) => s.titleAr)).toEqual(['عن عربيتي', 'جزء جديد'])
   })
 })
+
+describe('phase two', () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      'arabity-admin-session',
+      JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000, admin }),
+    )
+  })
+
+  it('shows statistics for the chosen range', async () => {
+    const stats = (days: number) => ({
+      days,
+      daily: Array.from({ length: days }, (_, i) => ({ date: `2026-10-${String(i + 1).padStart(2, '0')}`, users: i, parts: 1 })),
+      totals: { users: 21, parts: days },
+      forSale: { parts: 12, sellers: 4, sold: 3, views: 200, calls: 6, whatsapps: 14 },
+      byCategory: [{ key: 'BRAKES', count: 7 }],
+      byCity: [{ key: 'الجيزة', count: 5 }],
+      byBrand: [{ key: 'toyota', count: 9, name: 'تويوتا' }],
+      topParts: [{ id: 'p1', name: 'تيل فرامل', price: 1250, city: 'القاهرة', images: [], views: 50, calls: 2, whatsapps: 5 }],
+    })
+    const fetch = serve((url) => ({ data: stats(Number(new URL(url, 'http://x').searchParams.get('days'))) }))
+    open('/stats')
+
+    expect(await screen.findByText('تويوتا')).toBeTruthy()
+    expect(screen.getByText('الفرامل')).toBeTruthy()
+    expect(screen.getByText('تيل فرامل')).toBeTruthy()
+    // 20 of every 200 views reach out: 10 in 100.
+    expect(screen.getByText(/من كل 100 مشاهدة، ١٠/)).toBeTruthy()
+
+    await userEvent.click(screen.getByText('7 أيام'))
+    await vi.waitFor(() => expect(fetch.mock.calls.some(([url]) => String(url).includes('days=7'))).toBe(true))
+  })
+
+  it('sends a message to every inbox after asking', async () => {
+    const fetch = serve((url, init) => {
+      if (init?.method === 'POST') {
+        return { status: 201, data: { id: 'a1', inbox: true, recipients: 42 } }
+      }
+      return { data: { items: [], total: 0, page: 1, pageSize: 25 } }
+    })
+    open('/announcements')
+
+    const send = await screen.findByRole('button', { name: 'ابعت' })
+    expect((send as HTMLButtonElement).disabled).toBe(true)
+    await userEvent.type(screen.getByLabelText('العنوان بالعربي'), 'عرض')
+    await userEvent.type(screen.getByLabelText('العنوان بالإنجليزي'), 'Offer')
+    await userEvent.type(screen.getByLabelText('الرسالة بالعربي'), 'انشر ببلاش')
+    await userEvent.type(screen.getByLabelText('الرسالة بالإنجليزي'), 'List for free')
+    await userEvent.click(send)
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByRole('button', { name: 'ابعت' }))
+    await vi.waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(true))
+    const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!
+    expect(JSON.parse(String(post[1]?.body))).toEqual({
+      titleAr: 'عرض',
+      titleEn: 'Offer',
+      bodyAr: 'انشر ببلاش',
+      bodyEn: 'List for free',
+      audience: 'ALL',
+      inbox: true,
+      banner: false,
+      bannerUntil: null,
+    })
+  })
+
+  it('adds a car make and shows why a removal is refused', async () => {
+    const cars = {
+      brands: [
+        {
+          id: 'toyota',
+          nameAr: 'تويوتا',
+          nameEn: 'Toyota',
+          models: [{ id: 'corolla', nameAr: 'كورولا', nameEn: 'Corolla', fromYear: 2008, toYear: null }],
+        },
+      ],
+      updatedAt: null,
+    }
+    let refuse = false
+    const fetch = serve((_url, init) => {
+      if (init?.method === 'PUT' && refuse) {
+        return { status: 409, code: 'CARS_IN_USE', message: 'مينفعش تشيل تويوتا كورولا' }
+      }
+      return { data: { cars } }
+    })
+    open('/cars')
+
+    await userEvent.click(await screen.findByRole('button', { name: /ضيف ماركة/ }))
+    await userEvent.type(screen.getAllByLabelText('الاسم بالعربي').at(-1)!, 'بايك')
+    await userEvent.type(screen.getAllByLabelText('الاسم بالإنجليزي').at(-1)!, 'BAIC')
+    await userEvent.type(screen.getAllByLabelText('الموديل بالعربي').at(-1)!, 'إكس 35')
+    await userEvent.type(screen.getAllByLabelText('الموديل بالإنجليزي').at(-1)!, 'X 35')
+    await userEvent.click(screen.getByRole('button', { name: 'حفظ' }))
+    await vi.waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(true))
+    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')!
+    const sent = JSON.parse(String(put[1]?.body)) as { brands: { id: string; models: { id: string }[] }[] }
+    // Codes come from the English names.
+    expect(sent.brands.map((brand) => brand.id)).toEqual(['toyota', 'baic'])
+    expect(sent.brands[1]!.models[0]!.id).toBe('x-35')
+
+    refuse = true
+    await userEvent.click(screen.getByRole('button', { name: 'حفظ' }))
+    expect(await screen.findByText('مينفعش تشيل تويوتا كورولا')).toBeTruthy()
+  })
+})

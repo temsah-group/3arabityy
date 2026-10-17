@@ -32,7 +32,7 @@ export type HistoryEntry = {
   id: string
   adminEmail: string
   action: string
-  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS'
+  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS' | 'ANNOUNCEMENT'
   targetId: string
   note: string | null
   changes: Record<string, unknown> | null
@@ -126,4 +126,52 @@ export type AppSettings = {
   terms: { sections: Section[]; updatedAt: string }
   privacy: { sections: Section[]; updatedAt: string }
   faq: { sections: Section[]; updatedAt: string }
+}
+
+export type CarModel = { id: string; nameAr: string; nameEn: string; fromYear: number; toYear: number | null }
+export type CarBrand = { id: string; nameAr: string; nameEn: string; models: CarModel[] }
+
+/** `/settings` also carries the cars, as `/app-config` does. */
+export type CarsSettings = { cars: { brands: CarBrand[]; updatedAt: string | null } }
+
+export type Audience = 'ALL' | 'SELLERS'
+
+export type Announcement = {
+  id: string
+  titleAr: string
+  titleEn: string
+  bodyAr: string
+  bodyEn: string
+  audience: Audience
+  inbox: boolean
+  banner: boolean
+  bannerUntil: string | null
+  /** Still on the home screen. */
+  bannerLive: boolean
+  endedAt: string | null
+  recipients: number
+  adminEmail: string
+  createdAt: string
+}
+
+export type Count = { key: string; count: number; name?: string }
+
+export type Stats = {
+  days: number
+  daily: { date: string; users: number; parts: number }[]
+  totals: { users: number; parts: number }
+  forSale: { parts: number; sellers: number; sold: number; views: number; calls: number; whatsapps: number }
+  byCategory: Count[]
+  byCity: Count[]
+  byBrand: Count[]
+  topParts: {
+    id: string
+    name: string
+    price: number
+    city: string
+    images: string[]
+    views: number
+    calls: number
+    whatsapps: number
+  }[]
 }

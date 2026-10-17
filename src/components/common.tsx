@@ -97,7 +97,7 @@ export function PartStateBadge({ part }: { part: PartRow }) {
   )
 }
 
-export function PartThumb({ part, size = 48 }: { part: PartRow; size?: number }) {
+export function PartThumb({ part, size = 48 }: { part: Pick<PartRow, 'images'>; size?: number }) {
   const cover = part.images[0]
   return (
     <Avatar src={cover ? mediaUrl(cover) : null} size={size} radius="sm" alt="">

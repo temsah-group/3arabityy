@@ -9,7 +9,8 @@ import { auditActions, formatDateTime, label } from '../labels'
 
 /** Where an entry's target opens. */
 function targetLink(entry: HistoryEntry): string | null {
-  if (entry.target === 'SETTINGS') return '/settings'
+  if (entry.target === 'SETTINGS') return entry.targetId === 'cars' ? '/cars' : '/settings'
+  if (entry.target === 'ANNOUNCEMENT') return entry.action === 'ANNOUNCEMENT_REMOVED' ? null : '/announcements'
   if (entry.target === 'USER') return `/users/${entry.targetId}`
   if (entry.target === 'PART') return entry.action === 'PART_REMOVED' ? null : `/parts/${entry.targetId}`
   const target = entry.changes?.target
@@ -69,7 +70,11 @@ export function AuditPage() {
                             </Anchor>
                           ) : (
                             <Text size="sm" c="dimmed">
-                              {typeof entry.changes?.name === 'string' ? entry.changes.name : 'اتمسح'}
+                              {typeof entry.changes?.name === 'string'
+                                ? entry.changes.name
+                                : typeof entry.changes?.titleAr === 'string'
+                                  ? entry.changes.titleAr
+                                  : 'اتمسح'}
                             </Text>
                           )}
                         </Table.Td>

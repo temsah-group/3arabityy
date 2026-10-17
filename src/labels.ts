@@ -49,6 +49,15 @@ export const auditActions: Record<string, string> = {
   PART_REMOVED: 'مسح إعلان',
   SUPPORT_UPDATED: 'تعديل بيانات الدعم',
   DOCUMENT_UPDATED: 'تعديل نص',
+  CARS_UPDATED: 'تعديل العربيات',
+  ANNOUNCEMENT_SENT: 'رسالة للمستخدمين',
+  ANNOUNCEMENT_ENDED: 'شيل بانر من الرئيسية',
+  ANNOUNCEMENT_REMOVED: 'مسح رسالة للمستخدمين',
+}
+
+export const audiences: Record<string, string> = {
+  ALL: 'كل المستخدمين',
+  SELLERS: 'البائعين بس',
 }
 
 export const roles: Record<string, string> = { OWNER: 'مالك', MODERATOR: 'مشرف' }
