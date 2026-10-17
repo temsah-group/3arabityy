@@ -13,6 +13,7 @@ import {
   type CarQuery,
   type CreatePartInput,
   type FeaturedQuery,
+  type HomeQuery,
   type ListQuery,
   type UpdatePartInput,
 } from './parts.schemas.js';
@@ -32,6 +33,10 @@ const SORTS = {
   PRICE_LOW: { field: 'price', direction: 1 },
   PRICE_HIGH: { field: 'price', direction: -1 },
 } as const;
+
+/** How many parts each home list shows. */
+const HOME_FEATURED = 8;
+const HOME_LATEST = 6;
 
 const notFound = () => new AppError(404, ErrorCode.PART_NOT_FOUND, 'parts.notFound');
 
@@ -66,6 +71,36 @@ export class PartsService {
     if (query.cars) Object.assign(filter, fitsAny(query.cars));
     const found = await this.parts.find(filter).sort({ listedAt: -1 }).limit(query.limit).exec();
     return { items: await this.present(found, viewerId) };
+  }
+
+  /**
+   * Everything the home screen shows in one reply: the newest featured
+   * parts, the newest parts, and how many parts fit the user's cars
+   * whatever their condition.
+   */
+  async home(query: HomeQuery, viewerId?: string) {
+    const forSale: QueryFilter<Part> = { ...VISIBLE, isSold: false };
+    const filter: QueryFilter<Part> = { ...forSale };
+    if (query.condition) filter.condition = query.condition;
+    if (query.cars) Object.assign(filter, fitsAny(query.cars));
+    const newest = { listedAt: -1, _id: -1 } as const;
+    const [featured, latest, fittingCount] = await Promise.all([
+      this.parts
+        .find({ ...filter, isFeatured: true })
+        .sort(newest)
+        .limit(HOME_FEATURED)
+        .exec(),
+      this.parts.find(filter).sort(newest).limit(HOME_LATEST).exec(),
+      query.cars
+        ? this.parts.countDocuments({ ...forSale, ...fitsAny(query.cars) }).exec()
+        : Promise.resolve(0),
+    ]);
+    const presented = await this.present([...featured, ...latest], viewerId);
+    return {
+      featured: presented.slice(0, featured.length),
+      latest: presented.slice(featured.length),
+      fittingCount,
+    };
   }
 
   async mine(userId: string, cursor: string | undefined, limit: number): Promise<Page> {

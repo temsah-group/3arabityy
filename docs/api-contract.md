@@ -205,6 +205,7 @@ saved parts and reports they made (🔜 once those exist).
 | ------ | -------------------- | --------- | ------------------------------------- | ---------------------------------------------------------------------------- |
 | GET    | `/parts`             | 👁         | see **Search** below                  | page of Part                                                                 |
 | GET    | `/parts/featured`    | 👁         | `condition?, cars?, limit?`           | `{ items: [Part] }`                                                          |
+| GET    | `/parts/home`        | 👁         | `condition?, cars?`                   | `{ featured: [Part] (≤ 8), latest: [Part] (≤ 6), fittingCount }`             |
 | GET    | `/parts/:id`         | 👁         |                                       | Part; counts a view unless it is the caller's own                            |
 | GET    | `/parts/:id/similar` | 👁         | `limit?`                              | `{ items: [Part] }` (same category or same models, never itself, never sold) |
 | GET    | `/parts/mine`        | 🔒        | page; sold included                   | page of Part (with `stats`)                                                  |
@@ -231,7 +232,12 @@ sent; 1–8 `images`, all uploaded by the caller; 1–20 `fitments` with
 `fromYear ≤ toYear` inside the model's years; `city` one of the 27
 governorates; `description` ≤ 1000 chars.
 
-Sold parts are hidden from `/parts`, `/parts/featured`, `/parts/:id/similar`
+`/parts/home` is the app's home screen in one request: the newest featured
+parts and the newest parts for the condition and cars, and `fittingCount`,
+how many parts for sale fit any of `cars` whatever their condition (0
+without `cars`).
+
+Sold parts are hidden from `/parts`, `/parts/featured`, `/parts/home`, `/parts/:id/similar`
 and seller pages, but `GET /parts/:id` still returns them (with
 `isSold: true`) so saved and shared links explain themselves.
 

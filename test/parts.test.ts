@@ -285,6 +285,60 @@ describe('finding parts', () => {
   });
 });
 
+describe('the home screen', () => {
+  it('sends featured, latest and the fitting count in one reply', async () => {
+    const seller = await account('seller@example.com');
+    const make = async (extra: object) => {
+      const res = await app.api
+        .post('/api/v1/parts')
+        .set(auth(seller.token))
+        .send(pads(['https://images.example.com/a.jpg'], extra))
+        .expect(201);
+      return res.body.data.id as string;
+    };
+    const corollaNew = await make({});
+    const corollaUsed = await make({ name: 'مساعدين خلفي', condition: 'USED', oldPrice: null });
+    const elantra = await make({
+      name: 'فلتر زيت',
+      oldPrice: null,
+      fitments: [{ brandId: 'hyundai', modelId: 'elantra', fromYear: 2012, toYear: 2016 }],
+    });
+    const sold = await make({ name: 'فانوس', oldPrice: null });
+    for (let i = 0; i < 7; i++) await make({ name: `قطعة ${i}`, oldPrice: null });
+    await app.container.models.Part.updateMany(
+      { _id: { $in: [corollaNew, corollaUsed, sold] } },
+      { $set: { isFeatured: true } },
+    );
+    await app.api
+      .post(`/api/v1/parts/${sold}/sold`)
+      .set(auth(seller.token))
+      .send({ sold: true })
+      .expect(200);
+
+    type Home = { featured: { id: string }[]; latest: { id: string }[]; fittingCount: number };
+    const home = async (query = '') =>
+      (await app.api.get(`/api/v1/parts/home${query}`).expect(200)).body.data as Home;
+
+    const all = await home();
+    expect(all.featured.map((p) => p.id)).toEqual([corollaUsed, corollaNew]);
+    expect(all.latest).toHaveLength(6);
+    expect(all.latest.map((p) => p.id)).not.toContain(sold);
+    expect(all.fittingCount).toBe(0);
+
+    // Narrowed to a car: the count ignores the condition, the lists do not.
+    const used = await home('?cars=toyota:corolla:2016&condition=USED');
+    expect(used.featured.map((p) => p.id)).toEqual([corollaUsed]);
+    expect(used.latest.map((p) => p.id)).toEqual([corollaUsed]);
+    const corollaCount = 2 + 7; // the new and used pads, and the seven others
+    expect(used.fittingCount).toBe(corollaCount);
+    const hyundai = await home('?cars=hyundai:elantra:2014');
+    expect(hyundai.latest.map((p) => p.id)).toEqual([elantra]);
+    expect(hyundai.fittingCount).toBe(1);
+
+    await app.api.get('/api/v1/parts/home?condition=SHINY').expect(400);
+  });
+});
+
 describe('managing a listing', () => {
   async function listed() {
     const seller = await account('seller@example.com');

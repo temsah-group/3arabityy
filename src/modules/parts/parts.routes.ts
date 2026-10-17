@@ -10,6 +10,7 @@ import {
   contactSchema,
   createPartSchema,
   featuredQuerySchema,
+  homeQuerySchema,
   limitQuerySchema,
   listQuerySchema,
   soldSchema,
@@ -52,6 +53,10 @@ export function partsRoutes(
 
   router.get('/featured', optionalAuth, async (req, res) => {
     send(res, { data: await parts.featured(parseQuery(featuredQuerySchema, req), viewer(req)) });
+  });
+
+  router.get('/home', optionalAuth, async (req, res) => {
+    send(res, { data: await parts.home(parseQuery(homeQuerySchema, req), viewer(req)) });
   });
 
   router.get('/mine', requireAuth, async (req, res) => {

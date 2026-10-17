@@ -146,6 +146,12 @@ export const featuredQuerySchema = z.object({
     .default(8),
 });
 
+/** The app's home screen: what it shows, narrowed to a condition and the user's cars. */
+export const homeQuerySchema = z.object({
+  condition: z.enum(PART_CONDITIONS, 'validation.query').optional(),
+  cars: cars.optional(),
+});
+
 export const limitQuerySchema = z.object({
   limit: z.coerce
     .number('validation.query')
@@ -159,4 +165,5 @@ export type CreatePartInput = z.infer<typeof createPartSchema>;
 export type UpdatePartInput = z.infer<typeof updatePartSchema>;
 export type ListQuery = z.infer<typeof listQuerySchema>;
 export type FeaturedQuery = z.infer<typeof featuredQuerySchema>;
+export type HomeQuery = z.infer<typeof homeQuerySchema>;
 export type CarQuery = NonNullable<ListQuery['cars']>;
