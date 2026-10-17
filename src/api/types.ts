@@ -32,7 +32,7 @@ export type HistoryEntry = {
   id: string
   adminEmail: string
   action: string
-  target: 'USER' | 'PART' | 'REPORT'
+  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS'
   targetId: string
   note: string | null
   changes: Record<string, unknown> | null
@@ -114,4 +114,16 @@ export type Overview = {
   users: { total: number; thisWeek: number; suspended: number; verifiedSellers: number }
   parts: { forSale: number; thisWeek: number; hidden: number }
   reports: { openTargets: number }
+}
+
+/** A section of the terms or privacy policy, or a question of the FAQ. */
+export type Section = { titleAr: string; titleEn: string; bodyAr: string; bodyEn: string }
+
+export type DocumentName = 'terms' | 'privacy' | 'faq'
+
+export type AppSettings = {
+  support: { email: string; phone: string; whatsapp: string }
+  terms: { sections: Section[]; updatedAt: string }
+  privacy: { sections: Section[]; updatedAt: string }
+  faq: { sections: Section[]; updatedAt: string }
 }

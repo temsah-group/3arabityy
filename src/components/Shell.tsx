@@ -7,6 +7,7 @@ import {
   IconHome,
   IconLogout,
   IconPackage,
+  IconSettings,
   IconUsers,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
@@ -37,7 +38,11 @@ export function Shell() {
   const { admin, isOwner, signOut } = useSession()
   const { pathname } = useLocation()
   const visible = isOwner
-    ? [...links, { to: '/audit', label: 'سجل العمليات', icon: IconHistory }]
+    ? [
+        ...links,
+        { to: '/settings', label: 'إعدادات التطبيق', icon: IconSettings },
+        { to: '/audit', label: 'سجل العمليات', icon: IconHistory },
+      ]
     : links
 
   return (

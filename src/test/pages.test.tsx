@@ -128,3 +128,52 @@ describe('reports', () => {
     expect(JSON.parse(String(resolveCall[1]?.body))).toEqual({ action: 'REMOVE_PART', note: 'إعلان وهمي' })
   })
 })
+
+describe('settings', () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      'arabity-admin-session',
+      JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000, admin }),
+    )
+  })
+
+  it('saves support details and a text', async () => {
+    const doc = (title: string) => ({
+      sections: [{ titleAr: title, titleEn: 'T', bodyAr: 'نص', bodyEn: 'Text' }],
+      updatedAt: '2026-10-15T00:00:00Z',
+    })
+    const settings = {
+      support: { email: 'support@3arabity.com', phone: '+201000000000', whatsapp: '+201000000000' },
+      terms: doc('عن عربيتي'),
+      privacy: doc('بياناتك'),
+      faq: doc('إزاي أشتري؟'),
+    }
+    const fetch = serve(() => ({ data: settings }))
+    open('/settings')
+
+    const whatsapp = await screen.findByLabelText('رقم الواتساب')
+    await userEvent.clear(whatsapp)
+    await userEvent.type(whatsapp, '+201112223334')
+    await userEvent.click(screen.getAllByRole('button', { name: 'حفظ' })[0]!)
+    await vi.waitFor(() =>
+      expect(fetch.mock.calls.some(([url]) => String(url).endsWith('/settings/support'))).toBe(true),
+    )
+    const support = fetch.mock.calls.find(([url]) => String(url).endsWith('/settings/support'))!
+    expect(JSON.parse(String(support[1]?.body))).toEqual({
+      ...settings.support,
+      whatsapp: '+201112223334',
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: /ضيف جزء/ }))
+    const titles = screen.getAllByLabelText('العنوان بالعربي')
+    expect(titles).toHaveLength(2)
+    await userEvent.type(titles[1]!, 'جزء جديد')
+    await userEvent.click(screen.getAllByRole('button', { name: 'حفظ' })[1]!)
+    await vi.waitFor(() =>
+      expect(fetch.mock.calls.some(([url]) => String(url).endsWith('/settings/documents/terms'))).toBe(true),
+    )
+    const terms = fetch.mock.calls.find(([url]) => String(url).endsWith('/settings/documents/terms'))!
+    const sent = JSON.parse(String(terms[1]?.body)) as { sections: { titleAr: string }[] }
+    expect(sent.sections.map((s) => s.titleAr)).toEqual(['عن عربيتي', 'جزء جديد'])
+  })
+})

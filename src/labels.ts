@@ -47,6 +47,8 @@ export const auditActions: Record<string, string> = {
   PART_FEATURED: 'تمييز إعلان',
   PART_UNFEATURED: 'شيل التمييز',
   PART_REMOVED: 'مسح إعلان',
+  SUPPORT_UPDATED: 'تعديل بيانات الدعم',
+  DOCUMENT_UPDATED: 'تعديل نص',
 }
 
 export const roles: Record<string, string> = { OWNER: 'مالك', MODERATOR: 'مشرف' }

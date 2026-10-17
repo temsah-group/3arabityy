@@ -8,6 +8,7 @@ import { PartPage } from './pages/PartPage'
 import { PartsPage } from './pages/PartsPage'
 import { ReportPage } from './pages/ReportPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { UserPage } from './pages/UserPage'
 import { UsersPage } from './pages/UsersPage'
 
@@ -28,6 +29,7 @@ export const routes = [
       { path: 'parts', element: <PartsPage /> },
       { path: 'parts/:id', element: <PartPage /> },
       { path: 'audit', element: <AuditPage /> },
+      { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
