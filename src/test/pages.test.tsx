@@ -211,7 +211,7 @@ describe('phase two', () => {
   })
 
   it('sends a message to every inbox after asking', async () => {
-    const fetch = serve((url, init) => {
+    const fetch = serve((_url, init) => {
       if (init?.method === 'POST') {
         return { status: 201, data: { id: 'a1', inbox: true, recipients: 42 } }
       }
