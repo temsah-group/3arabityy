@@ -46,6 +46,7 @@ export const ErrorCode = {
   ADMIN_ROLE_REQUIRED: 'ADMIN_ROLE_REQUIRED',
   NOTE_REQUIRED: 'NOTE_REQUIRED',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
+  CARS_IN_USE: 'CARS_IN_USE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

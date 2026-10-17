@@ -12,7 +12,7 @@ const note = z
 const flag = z.enum(['true', 'false'], 'validation.query').transform((value) => value === 'true');
 
 /** `?page=&pageSize=` on every admin table. */
-const pageQuery = z.object({
+export const pageQuery = z.object({
   page: z.coerce
     .number('validation.query')
     .int('validation.query')
@@ -90,3 +90,12 @@ export const auditQuerySchema = pageQuery.extend({
   adminId: id.optional(),
 });
 export type AuditQuery = z.infer<typeof auditQuerySchema>;
+
+export const statsQuerySchema = z.object({
+  days: z.coerce
+    .number('validation.query')
+    .int('validation.query')
+    .min(7, 'validation.query')
+    .max(365, 'validation.query')
+    .default(30),
+});

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { setCarBrands } from '../src/modules/catalog/catalog.js';
 import { hashPassword } from '../src/modules/users/users.service.js';
 import { auth, listPart, PASSWORD, signUp } from './helpers/people.js';
 import { startTestApp, type TestApp } from './helpers/test-app.js';
@@ -16,6 +17,8 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await app.reset();
+  // An earlier test may have saved its own cars.
+  setCarBrands(null);
 });
 
 const ADMIN = '/api/v1/admin';
@@ -377,5 +380,236 @@ describe('app settings', () => {
       ['DOCUMENT_UPDATED', 'privacy'],
       ['SUPPORT_UPDATED', 'support'],
     ]);
+  });
+});
+
+describe('announcements', () => {
+  const message = {
+    titleAr: 'عرض الصيف',
+    titleEn: 'Summer offer',
+    bodyAr: 'انشر قطعتك ببلاش الشهر ده',
+    bodyEn: 'List your part for free this month',
+  };
+
+  it('reaches every active inbox in its language, and the home screen', async () => {
+    const buyer = await signUp(app, 'buyer@example.com');
+    const seller = await signUp(app, 'seller@example.com');
+    const suspended = await signUp(app, 'gone@example.com');
+    await listPart(app, seller.token);
+    const moderator = await admin('MODERATOR');
+    const owner = await admin('OWNER');
+    await app.api
+      .patch(`${ADMIN}/users/${suspended.id}`)
+      .set(auth(owner))
+      .send({ status: 'SUSPENDED', note: 'spam' })
+      .expect(200);
+
+    await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(moderator))
+      .send({ ...message, audience: 'ALL', inbox: true, banner: true })
+      .expect(403);
+    await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(owner))
+      .send({ ...message, audience: 'ALL', inbox: false, banner: false })
+      .expect(400);
+
+    const sent = await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(owner))
+      .send({ ...message, audience: 'ALL', inbox: true, banner: true })
+      .expect(201);
+    expect(sent.body.data).toMatchObject({ recipients: 2, bannerLive: true });
+
+    expect((await inbox(buyer.token))[0]).toMatchObject({
+      kind: 'SYSTEM',
+      title: 'عرض الصيف',
+      body: 'انشر قطعتك ببلاش الشهر ده',
+    });
+    const english = await app.api
+      .get('/api/v1/notifications')
+      .set(auth(seller.token))
+      .set('Accept-Language', 'en')
+      .expect(200);
+    expect(english.body.data.items[0]).toMatchObject({ title: 'Summer offer' });
+
+    // Signed out too, on the home screen.
+    const config = await app.api.get('/api/v1/app-config').expect(200);
+    expect(config.body.data.announcement).toMatchObject({
+      id: sent.body.data.id,
+      titleEn: 'Summer offer',
+    });
+
+    // Taken down: off the home screen, still in the inbox.
+    await app.api
+      .post(`${ADMIN}/announcements/${sent.body.data.id}/end`)
+      .set(auth(owner))
+      .expect(200);
+    expect((await app.api.get('/api/v1/app-config').expect(200)).body.data.announcement).toBeNull();
+    expect(await inbox(buyer.token)).toHaveLength(1);
+
+    // Removed: gone from every inbox.
+    await app.api
+      .delete(`${ADMIN}/announcements/${sent.body.data.id}`)
+      .set(auth(owner))
+      .expect(204);
+    expect(await inbox(buyer.token)).toHaveLength(0);
+    const list = await app.api.get(`${ADMIN}/announcements`).set(auth(owner)).expect(200);
+    expect(list.body.data.total).toBe(0);
+    const log = await app.api.get(`${ADMIN}/audit`).set(auth(owner)).expect(200);
+    expect(log.body.data.items.map((e: { action: string }) => e.action).slice(0, 3)).toEqual([
+      'ANNOUNCEMENT_REMOVED',
+      'ANNOUNCEMENT_ENDED',
+      'ANNOUNCEMENT_SENT',
+    ]);
+  });
+
+  it('can go to sellers only, and show on the home screen only', async () => {
+    const buyer = await signUp(app, 'buyer@example.com');
+    const seller = await signUp(app, 'seller@example.com');
+    await listPart(app, seller.token);
+    const owner = await admin('OWNER');
+
+    const toSellers = await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(owner))
+      .send({ ...message, audience: 'SELLERS', inbox: true, banner: false })
+      .expect(201);
+    expect(toSellers.body.data.recipients).toBe(1);
+    expect(await inbox(seller.token)).toHaveLength(1);
+    expect(await inbox(buyer.token)).toHaveLength(0);
+
+    const until = new Date(Date.now() + 60_000).toISOString();
+    const bannerOnly = await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(owner))
+      .send({ ...message, audience: 'ALL', inbox: false, banner: true, bannerUntil: until })
+      .expect(201);
+    expect(bannerOnly.body.data.recipients).toBe(0);
+    expect(await inbox(buyer.token)).toHaveLength(0);
+    expect((await app.api.get('/api/v1/app-config').expect(200)).body.data.announcement.id).toBe(
+      bannerOnly.body.data.id,
+    );
+    await app.api
+      .post(`${ADMIN}/announcements`)
+      .set(auth(owner))
+      .send({
+        ...message,
+        audience: 'ALL',
+        inbox: false,
+        banner: true,
+        bannerUntil: new Date(Date.now() - 60_000).toISOString(),
+      })
+      .expect(400);
+  });
+});
+
+describe('statistics', () => {
+  it('counts sign-ups and listings per day, and where buyers reach out', async () => {
+    const seller = await signUp(app, 'seller@example.com');
+    const buyer = await signUp(app, 'buyer@example.com');
+    const part = await listPart(app, seller.token);
+    await listPart(app, seller.token, { category: 'ENGINE', city: 'الجيزة' });
+    await app.api.post(`/api/v1/parts/${part.id}/contact`).set(auth(buyer.token)).send({
+      channel: 'WHATSAPP',
+    });
+    const moderator = await admin('MODERATOR');
+
+    const res = await app.api.get(`${ADMIN}/stats?days=7`).set(auth(moderator)).expect(200);
+    const stats = res.body.data;
+    expect(stats.daily).toHaveLength(7);
+    expect(stats.daily.at(-1)).toMatchObject({ users: 2, parts: 2 });
+    expect(stats.totals).toEqual({ users: 2, parts: 2 });
+    expect(stats.forSale).toMatchObject({ parts: 2, sellers: 1, sold: 0, whatsapps: 1 });
+    expect(stats.topParts.map((p: { id: string }) => p.id)).toEqual([part.id]);
+    expect(stats.byCategory).toEqual(
+      expect.arrayContaining([
+        { key: 'BRAKES', count: 1 },
+        { key: 'ENGINE', count: 1 },
+      ]),
+    );
+    expect(stats.byBrand).toEqual([{ key: 'toyota', count: 2, name: 'تويوتا' }]);
+    await app.api.get(`${ADMIN}/stats?days=2`).set(auth(moderator)).expect(400);
+  });
+});
+
+describe('cars', () => {
+  it('lets owners add and rename cars, but not remove ones in use', async () => {
+    const seller = await signUp(app, 'seller@example.com');
+    await listPart(app, seller.token);
+    const owner = await admin('OWNER');
+    const config = (await app.api.get('/api/v1/app-config').expect(200)).body.data;
+    const brands = config.cars.brands as {
+      id: string;
+      nameAr: string;
+      models: { id: string; nameAr: string }[];
+    }[];
+    expect(brands.find((brand) => brand.id === 'toyota')).toBeTruthy();
+
+    const withBaic = [
+      ...brands,
+      {
+        id: 'baic',
+        nameAr: 'بايك',
+        nameEn: 'BAIC',
+        models: [{ id: 'x35', nameAr: 'X35', nameEn: 'X35', fromYear: 2021, toYear: null }],
+      },
+    ];
+    const moderator = await admin('MODERATOR');
+    await app.api
+      .put(`${ADMIN}/settings/cars`)
+      .set(auth(moderator))
+      .send({ brands: withBaic })
+      .expect(403);
+    await app.api
+      .put(`${ADMIN}/settings/cars`)
+      .set(auth(owner))
+      .send({ brands: [...withBaic, withBaic.at(-1)] })
+      .expect(400);
+    await app.api
+      .put(`${ADMIN}/settings/cars`)
+      .set(auth(owner))
+      .send({ brands: withBaic })
+      .expect(200);
+
+    // Parts can be listed for the new car at once.
+    await listPart(app, seller.token, {
+      fitments: [{ brandId: 'baic', modelId: 'x35', fromYear: 2022, toYear: 2024 }],
+    });
+    const after = (await app.api.get('/api/v1/app-config').expect(200)).body.data;
+    expect(after.cars.brands.at(-1).id).toBe('baic');
+    expect(after.cars.updatedAt).toBeTruthy();
+
+    // The Corolla has a part listed for it.
+    const withoutCorolla = withBaic.map((brand) =>
+      brand.id === 'toyota'
+        ? { ...brand, models: brand.models.filter((model) => model.id !== 'corolla') }
+        : brand,
+    );
+    const refused = await app.api
+      .put(`${ADMIN}/settings/cars`)
+      .set(auth(owner))
+      .send({ brands: withoutCorolla })
+      .expect(409);
+    expect(refused.body.code).toBe('CARS_IN_USE');
+    expect(refused.body.message).toContain('كورولا');
+
+    // An unused one can go.
+    const withoutYaris = withBaic.map((brand) =>
+      brand.id === 'toyota'
+        ? { ...brand, models: brand.models.filter((model) => model.id !== 'yaris') }
+        : brand,
+    );
+    await app.api
+      .put(`${ADMIN}/settings/cars`)
+      .set(auth(owner))
+      .send({ brands: withoutYaris })
+      .expect(200);
+    await app.api
+      .post('/api/v1/parts')
+      .set(auth(seller.token))
+      .send({ fitments: [{ brandId: 'toyota', modelId: 'yaris', fromYear: 2014, toYear: 2020 }] })
+      .expect(400);
   });
 });

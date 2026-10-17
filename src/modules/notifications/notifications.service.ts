@@ -234,9 +234,11 @@ function present(item: NotificationDocument, lang: Lang) {
           t(lang, `notifications.listing${key}Body`, [name]),
         ];
       }
-      // News and announcements carry their own words.
+      // News and announcements carry their own words: Arabic, then English.
       default:
-        return [params[0] ?? '', params[1] ?? ''];
+        return lang === 'en' && params.length >= 4
+          ? [params[2]!, params[3]!]
+          : [params[0] ?? '', params[1] ?? ''];
     }
   })();
   return {

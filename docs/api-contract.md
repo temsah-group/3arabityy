@@ -362,24 +362,30 @@ admin for 15 minutes (`429 ACCOUNT_LOCKED`). Everything else needs
 Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
 `{ items, total, page, pageSize }`.
 
-| Method | Path                                 | Body / query                                                              | Who   |
-| ------ | ------------------------------------ | ------------------------------------------------------------------------- | ----- |
-| GET    | `/admin/auth/me`                     |                                                                           | all   |
-| GET    | `/admin/overview`                    | counts of users, parts and open reports                                   | all   |
-| GET    | `/admin/reports`                     | `?status=OPEN\|CLOSED&target=PART\|SELLER`, grouped by target             | all   |
-| GET    | `/admin/reports/:target/:id`         | every report on it, with reporters                                        | all   |
-| POST   | `/admin/reports/:target/:id/resolve` | `{ "action": "DISMISS\|HIDE_PART\|REMOVE_PART\|SUSPEND_SELLER", "note" }` | all   |
-| GET    | `/admin/users`                       | `?q=&status=ACTIVE\|SUSPENDED&verified=true\|false`                       | all   |
-| GET    | `/admin/users/:id`                   | account, counts, cars, history                                            | all   |
-| PATCH  | `/admin/users/:id`                   | `{ "status"?, "verified"?, "note" }`; `verified` owners only              | all   |
-| GET    | `/admin/parts`                       | `?q=&status=FOR_SALE\|SOLD\|HIDDEN&featured=&sellerId=`                   | all   |
-| GET    | `/admin/parts/:id`                   | part, seller, stats, open reports, history                                | all   |
-| PATCH  | `/admin/parts/:id`                   | `{ "hidden"?, "featured"?, "note" }`; `featured` owners only              | all   |
-| DELETE | `/admin/parts/:id`                   | `{ "note" }`                                                              | all   |
-| GET    | `/admin/settings`                    | as `/app-config`                                                          | owner |
-| PUT    | `/admin/settings/support`            | `{ "email", "phone", "whatsapp" }` (E.164)                                | owner |
-| PUT    | `/admin/settings/documents/:name`    | `terms\|privacy\|faq`: `{ "sections": [...] }` (1–50)                     | owner |
-| GET    | `/admin/audit`                       | `?targetId=&adminId=`                                                     | owner |
+| Method | Path                                 | Body / query                                                                                    | Who   |
+| ------ | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ----- |
+| GET    | `/admin/auth/me`                     |                                                                                                 | all   |
+| GET    | `/admin/overview`                    | counts of users, parts and open reports                                                         | all   |
+| GET    | `/admin/stats`                       | `?days=7…365` (30): see below                                                                   | all   |
+| GET    | `/admin/reports`                     | `?status=OPEN\|CLOSED&target=PART\|SELLER`, grouped by target                                   | all   |
+| GET    | `/admin/reports/:target/:id`         | every report on it, with reporters                                                              | all   |
+| POST   | `/admin/reports/:target/:id/resolve` | `{ "action": "DISMISS\|HIDE_PART\|REMOVE_PART\|SUSPEND_SELLER", "note" }`                       | all   |
+| GET    | `/admin/users`                       | `?q=&status=ACTIVE\|SUSPENDED&verified=true\|false`                                             | all   |
+| GET    | `/admin/users/:id`                   | account, counts, cars, history                                                                  | all   |
+| PATCH  | `/admin/users/:id`                   | `{ "status"?, "verified"?, "note" }`; `verified` owners only                                    | all   |
+| GET    | `/admin/parts`                       | `?q=&status=FOR_SALE\|SOLD\|HIDDEN&featured=&sellerId=`                                         | all   |
+| GET    | `/admin/parts/:id`                   | part, seller, stats, open reports, history                                                      | all   |
+| PATCH  | `/admin/parts/:id`                   | `{ "hidden"?, "featured"?, "note" }`; `featured` owners only                                    | all   |
+| DELETE | `/admin/parts/:id`                   | `{ "note" }`                                                                                    | all   |
+| GET    | `/admin/settings`                    | as `/app-config`                                                                                | owner |
+| PUT    | `/admin/settings/support`            | `{ "email", "phone", "whatsapp" }` (E.164)                                                      | owner |
+| PUT    | `/admin/settings/documents/:name`    | `terms\|privacy\|faq`: `{ "sections": [...] }` (1–50)                                           | owner |
+| PUT    | `/admin/settings/cars`               | `{ "brands": [{ id, nameAr, nameEn, models: [{ id, nameAr, nameEn, fromYear, toYear }] }] }`    | owner |
+| GET    | `/admin/announcements`               | sent announcements, newest first                                                                | owner |
+| POST   | `/admin/announcements`               | `{ titleAr, titleEn, bodyAr, bodyEn, audience: "ALL"\|"SELLERS", inbox, banner, bannerUntil? }` | owner |
+| POST   | `/admin/announcements/:id/end`       | takes the home banner down; inbox messages stay                                                 | owner |
+| DELETE | `/admin/announcements/:id`           | removes it from the home screen and every inbox                                                 | owner |
+| GET    | `/admin/audit`                       | `?targetId=&adminId=`                                                                           | owner |
 
 Roles: `OWNER` does everything; `MODERATOR` cannot verify sellers, feature
 parts or read the log (`403 ADMIN_ROLE_REQUIRED`). Suspending, restoring,
@@ -396,6 +402,23 @@ the user.
   hiding, showing and removal (params `["HIDDEN"|"RESTORED"|"REMOVED", name]`).
 - **Resolving** closes every open report on that target, keeping the
   action, note, admin and time.
+- **Statistics** (`/admin/stats`): `daily` (`[{ date: "YYYY-MM-DD", users,
+parts }]`, Cairo days, quiet ones included), `totals` over the range, and
+  over parts for sale now: `forSale` (`parts, sellers, sold, views, calls,
+whatsapps`, totals since each part went up), `byCategory`, `byCity` and
+  `byBrand` (top 10, `[{ key, count }]`, brands with `name`) and `topParts`
+  (top 10 by calls + WhatsApp).
+- **Announcements** go, with `inbox`, to every active account (`ALL`) or
+  every one with a part listed (`SELLERS`) as a `SYSTEM` notification with
+  params `[titleAr, bodyAr, titleEn, bodyEn]`, shown in the reader's
+  language. With `banner` the newest one still up shows on the home screen
+  (`announcement` in `/app-config`), to signed-out users too, until
+  `bannerUntil` or until it is ended. At least one of `inbox` and `banner`.
+- **Cars**: the whole list at once. Codes (`id`) are lower-case letters,
+  digits and dashes, unique per list and per make. A make or model that a
+  part or a user's car uses cannot be removed (`409 CARS_IN_USE`); renaming
+  and changing years is fine. New parts are checked against the saved list
+  at once; other servers catch up within a minute.
 
 ### App config ✅ 👁
 
@@ -407,6 +430,8 @@ the user.
   "terms":   { "sections": [{ "titleAr", "titleEn", "bodyAr", "bodyEn" }], "updatedAt": "…" },
   "privacy": { "sections": [...], "updatedAt": "…" },
   "faq":     { "sections": [...], "updatedAt": "…" },
+  "cars":    { "brands": [{ "id", "nameAr", "nameEn", "models": [{ "id", "nameAr", "nameEn", "fromYear", "toYear": null }] }], "updatedAt": "…" | null },
+  "announcement": { "id", "titleAr", "titleEn", "bodyAr", "bodyEn", "createdAt" } | null,
   "updatedAt": "…" | null
 }
 ```
@@ -436,3 +461,4 @@ texts. Cached for five minutes (`Cache-Control`).
 | `ADMIN_ROLE_REQUIRED` | 403    | a moderator doing an owner's action     |
 | `NOTE_REQUIRED`       | 400    | an admin action without a reason        |
 | `USER_NOT_FOUND`      | 404    | unknown account, in the dashboard       |
+| `CARS_IN_USE`         | 409    | removing a car parts or users still use |

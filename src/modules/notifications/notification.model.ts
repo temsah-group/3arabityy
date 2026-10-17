@@ -20,6 +20,8 @@ const notificationSchema = new Schema(
     kind: { type: String, enum: NOTIFICATION_KINDS, required: true },
     params: { type: [String], default: [] },
     partId: { type: Schema.Types.ObjectId, ref: 'Part', default: null },
+    /** The dashboard announcement it delivers, so removing that removes it. */
+    announcementId: { type: Schema.Types.ObjectId, ref: 'Announcement', default: null },
     read: { type: Boolean, default: false },
   },
   { timestamps: true, collection: 'notifications' },
@@ -28,6 +30,7 @@ const notificationSchema = new Schema(
 notificationSchema.index({ userId: 1, createdAt: -1, _id: -1 });
 notificationSchema.index({ userId: 1, read: 1 });
 notificationSchema.index({ partId: 1 });
+notificationSchema.index({ announcementId: 1 }, { sparse: true });
 
 export type Notification = InferSchemaType<typeof notificationSchema>;
 export type NotificationDocument = HydratedDocument<Notification>;

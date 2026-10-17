@@ -13,6 +13,10 @@ async function main() {
   const container = createContainer(connection, env);
   // Unique indexes (one account per email) must exist before the first write.
   await Promise.all(Object.values(container.models).map((model) => model.syncIndexes()));
+  // The cars owners saved, before the first part is checked against them;
+  // then every minute, in case another server saved new ones.
+  await container.settings.current();
+  setInterval(() => void container.settings.current().catch(() => {}), 60_000).unref();
 
   const app = createApp(container);
   const server = app.listen(env.PORT, () => {

@@ -2,20 +2,33 @@ import cars from './car-catalog.json' with { type: 'json' };
 import governorates from './governorates.json' with { type: 'json' };
 
 /**
- * Car makes and models and Egypt's governorates, as the app ships them
- * (generated from the app's `car_catalog.dart` and `egypt_governorates.dart`;
- * regenerate both when the app's lists change).
+ * Car makes and models and Egypt's governorates. The cars start as the
+ * list in `car-catalog.json` (the one the app ships with); owners edit them
+ * from the dashboard, and [setCarBrands] puts the saved list in use.
  */
-type CarModel = {
+export type CarModel = {
   id: string;
   nameAr: string;
   nameEn: string;
   fromYear: number;
   toYear: number | null;
 };
-type CarBrand = { id: string; nameAr: string; nameEn: string; models: CarModel[] };
+export type CarBrand = { id: string; nameAr: string; nameEn: string; models: CarModel[] };
 
-const brands = cars as CarBrand[];
+/** The launch list, used until an owner saves one. */
+export const DEFAULT_CAR_BRANDS = cars as CarBrand[];
+
+let brands: CarBrand[] = DEFAULT_CAR_BRANDS;
+
+/** The cars parts are listed for and searched by. */
+export function carBrands(): CarBrand[] {
+  return brands;
+}
+
+/** Puts [list] in use, or the launch list when null. */
+export function setCarBrands(list: CarBrand[] | null): void {
+  brands = list?.length ? list : DEFAULT_CAR_BRANDS;
+}
 const cities = new Set(governorates as string[]);
 
 export const PART_CATEGORIES = [

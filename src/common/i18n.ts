@@ -286,6 +286,19 @@ const messages = {
   },
   'admin.userNotFound': { ar: 'المستخدم ده مش موجود', en: 'This user does not exist' },
   'admin.saved': { ar: 'تم الحفظ', en: 'Saved' },
+  'admin.carsInUse': {
+    ar: 'مينفعش تشيل {0}: فيه إعلانات أو عربيات مستخدمين متسجلة عليها',
+    en: "You cannot remove {0}: listings or users' cars use it",
+  },
+  'admin.carsDuplicate': {
+    ar: 'فيه ماركة أو موديل متكرر بنفس الكود',
+    en: 'Two makes or models share a code',
+  },
+  'admin.announcementNotFound': {
+    ar: 'الإعلان ده مش موجود',
+    en: 'This announcement does not exist',
+  },
+  'admin.announcementSent': { ar: 'اتبعت الإعلان', en: 'Announcement sent' },
 
   'mail.otpSubject.register': {
     ar: 'رمز تأكيد حسابك في عربيتي',

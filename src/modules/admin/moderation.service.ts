@@ -2,7 +2,7 @@ import { Types, type PipelineStage, type QueryFilter } from 'mongoose';
 
 import { AppError, badRequest, ErrorCode, forbidden } from '../../common/http/errors.js';
 import type { SessionsService } from '../auth/sessions.service.js';
-import { normalizeSearchText } from '../catalog/catalog.js';
+import { carBrands, normalizeSearchText } from '../catalog/catalog.js';
 import type {
   ListingChange,
   NotificationsService,
@@ -30,6 +30,13 @@ import type {
 } from './admin.schemas.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Days are counted in Egypt's time, so a day starts at midnight in Cairo. */
+const TIMEZONE = 'Africa/Cairo';
+
+/** `YYYY-MM-DD` of [date] in Cairo. */
+const cairoDay = (date: Date) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(date);
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -121,6 +128,134 @@ export class ModerationService {
       parts: { forSale: partsForSale, thisWeek: partsThisWeek, hidden: partsHidden },
       reports: { openTargets: openTargets[0]?.n ?? 0 },
     };
+  }
+
+  /**
+   * How 3arabity is doing over the last [days]: sign-ups and new parts per
+   * day, and, over every part for sale, where buyers look and reach out.
+   * Views, calls and WhatsApp messages are kept per part, not per day, so
+   * those are totals since each part went up.
+   */
+  async stats(days: number) {
+    const { users, parts } = this.deps;
+    const since = new Date(Date.now() - (days - 1) * DAY_MS);
+    since.setUTCHours(0, 0, 0, 0);
+    // A day earlier, so the first Cairo day is whole; trimmed below.
+    const from = new Date(since.getTime() - DAY_MS);
+    const perDay = (model: typeof users | typeof parts) =>
+      (model as typeof users)
+        .aggregate<{ _id: string; n: number }>([
+          { $match: { createdAt: { $gte: from } } },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE },
+              },
+              n: { $sum: 1 },
+            },
+          },
+        ])
+        .exec();
+    const forSale = { isSold: false, hiddenAt: null };
+    const contacts = { $add: ['$stats.calls', '$stats.whatsapps'] };
+    const [signUps, listings, totals, byCategory, byCity, byBrand, topParts, sold] =
+      await Promise.all([
+        perDay(users),
+        perDay(parts),
+        parts
+          .aggregate<{
+            parts: number;
+            sellers: string[];
+            views: number;
+            calls: number;
+            whatsapps: number;
+          }>([
+            { $match: forSale },
+            {
+              $group: {
+                _id: null,
+                parts: { $sum: 1 },
+                sellers: { $addToSet: '$sellerId' },
+                views: { $sum: '$stats.views' },
+                calls: { $sum: '$stats.calls' },
+                whatsapps: { $sum: '$stats.whatsapps' },
+              },
+            },
+          ])
+          .exec(),
+        this.partsBy([{ $match: forSale }], '$category'),
+        this.partsBy([{ $match: forSale }], '$city', 10),
+        this.partsBy([{ $match: forSale }, { $unwind: '$fitments' }], '$fitments.brandId', 10),
+        parts
+          .aggregate<Part & { _id: Types.ObjectId; contacts: number }>([
+            { $match: forSale },
+            { $addFields: { contacts } },
+            { $match: { contacts: { $gt: 0 } } },
+            { $sort: { contacts: -1, 'stats.views': -1 } },
+            { $limit: 10 },
+          ])
+          .exec(),
+        parts.countDocuments({ isSold: true }).exec(),
+      ]);
+
+    // Every day in the range, quiet ones included.
+    const count = (rows: { _id: string; n: number }[]) =>
+      new Map(rows.map((row) => [row._id, row.n]));
+    const signUpsByDay = count(signUps);
+    const listingsByDay = count(listings);
+    const daily = [];
+    for (let day = 0; day < days; day++) {
+      const date = cairoDay(new Date(Date.now() - (days - 1 - day) * DAY_MS));
+      daily.push({
+        date,
+        users: signUpsByDay.get(date) ?? 0,
+        parts: listingsByDay.get(date) ?? 0,
+      });
+    }
+    const total = totals[0];
+    const brandName = new Map(carBrands().map((brand) => [brand.id, brand.nameAr]));
+    return {
+      days,
+      daily,
+      totals: {
+        users: daily.reduce((sum, day) => sum + day.users, 0),
+        parts: daily.reduce((sum, day) => sum + day.parts, 0),
+      },
+      forSale: {
+        parts: total?.parts ?? 0,
+        sellers: total?.sellers.length ?? 0,
+        sold,
+        views: total?.views ?? 0,
+        calls: total?.calls ?? 0,
+        whatsapps: total?.whatsapps ?? 0,
+      },
+      byCategory,
+      byCity,
+      byBrand: byBrand.map((row) => ({ ...row, name: brandName.get(row.key) ?? row.key })),
+      topParts: topParts.map((part) => ({
+        id: part._id.toString(),
+        name: part.name,
+        price: part.price,
+        city: part.city,
+        images: part.images,
+        views: part.stats?.views ?? 0,
+        calls: part.stats?.calls ?? 0,
+        whatsapps: part.stats?.whatsapps ?? 0,
+      })),
+    };
+  }
+
+  /** How many parts per [field], most first. */
+  private async partsBy(pipeline: PipelineStage[], field: string, top?: number) {
+    const rows = await this.deps.parts
+      .aggregate<{ _id: string; n: number }>([
+        ...pipeline,
+        { $group: { _id: field, n: { $sum: 1 } } },
+        { $sort: { n: -1, _id: 1 } },
+        ...(top ? [{ $limit: top }] : []),
+      ])
+      .exec();
+    return rows.map((row) => ({ key: row._id, count: row.n }));
   }
 
   // ---- Reports ----

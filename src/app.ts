@@ -35,7 +35,12 @@ export function createApp(container: Container) {
     app.use(
       `${API_PREFIX}/admin`,
       cors({ origin: env.ADMIN_ORIGINS.length ? env.ADMIN_ORIGINS : false }),
-      adminRoutes(container.adminAuth, container.moderation, container.settings),
+      adminRoutes(
+        container.adminAuth,
+        container.moderation,
+        container.settings,
+        container.announcements,
+      ),
     );
   }
 
@@ -53,7 +58,10 @@ export function createApp(container: Container) {
   api.use('/sellers', sellersRoutes(container.sellers, container.parts, container.optionalAuth));
   api.use('/notifications', notificationsRoutes(container.notifications, container.requireAuth));
   api.use('/reports', reportsRoutes(container.reports, container.requireAuth));
-  api.use('/app-config', appConfigRoutes(container.settings));
+  api.use(
+    '/app-config',
+    appConfigRoutes(container.settings, () => container.announcements.banner()),
+  );
   app.use(API_PREFIX, api);
 
   // Uploaded photos. Names are random and never reused, so they cache for good.

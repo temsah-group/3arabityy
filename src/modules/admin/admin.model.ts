@@ -43,7 +43,7 @@ export type AdminModel = Model<Admin>;
 export const createAdminModel = (connection: Connection): AdminModel =>
   connection.model<Admin>('Admin', adminSchema);
 
-export const AUDIT_TARGETS = ['USER', 'PART', 'REPORT', 'SETTINGS'] as const;
+export const AUDIT_TARGETS = ['USER', 'PART', 'REPORT', 'SETTINGS', 'ANNOUNCEMENT'] as const;
 
 /** One thing an admin did, kept for good: who, what, to what and why. */
 const auditSchema = new Schema(
@@ -53,7 +53,7 @@ const auditSchema = new Schema(
     adminEmail: { type: String, required: true },
     action: { type: String, required: true },
     target: { type: String, enum: AUDIT_TARGETS, required: true },
-    /** An account, part or reported id; for settings, their name (`support`, `terms`…). */
+    /** An account, part, report or announcement id; for settings, their name (`support`, `cars`…). */
     targetId: { type: Schema.Types.Mixed, required: true },
     /** What the admin wrote as the reason. */
     note: { type: String, default: null },

@@ -14,9 +14,14 @@ import {
   reportsQuerySchema,
   reportTargetSchema,
   resolutionSchema,
+  statsQuerySchema,
   usersQuerySchema,
   userUpdateSchema,
 } from './admin.schemas.js';
+import {
+  announcementsAdminRoutes,
+  type AnnouncementsService,
+} from '../announcements/announcements.js';
 import { settingsAdminRoutes, type SettingsService } from '../settings/settings.js';
 import type { ModerationService } from './moderation.service.js';
 
@@ -25,6 +30,7 @@ export function adminRoutes(
   auth: AdminAuthService,
   moderation: ModerationService,
   settings: SettingsService,
+  announcements: AnnouncementsService,
 ): Router {
   const router = Router();
   const signedIn = requireAdmin(auth);
@@ -44,6 +50,11 @@ export function adminRoutes(
 
   router.get('/overview', async (_req, res) => {
     send(res, { data: await moderation.overview() });
+  });
+
+  router.get('/stats', async (req, res) => {
+    const { days } = parseQuery(statsQuerySchema, req);
+    send(res, { data: await moderation.stats(days) });
   });
 
   // ---- Reports ----
@@ -111,6 +122,10 @@ export function adminRoutes(
   // ---- What the app says about 3arabity (owners) ----
 
   router.use('/settings', settingsAdminRoutes(settings, owner));
+
+  // ---- Messages to every user (owners) ----
+
+  router.use('/announcements', announcementsAdminRoutes(announcements, owner));
 
   // ---- The log (owners) ----
 

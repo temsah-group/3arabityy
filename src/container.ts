@@ -5,6 +5,10 @@ import { authenticate, optionalAuthenticate } from './middleware/authenticate.js
 import { AdminAuthService } from './modules/admin/admin-auth.js';
 import { createAdminModel, createAuditModel } from './modules/admin/admin.model.js';
 import { ModerationService } from './modules/admin/moderation.service.js';
+import {
+  AnnouncementsService,
+  createAnnouncementModel,
+} from './modules/announcements/announcements.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { OtpService } from './modules/auth/otp.service.js';
 import { createOtpModel } from './modules/auth/otp.model.js';
@@ -49,6 +53,7 @@ export function createContainer(
     Admin: createAdminModel(connection),
     AuditEntry: createAuditModel(connection),
     Settings: createSettingsModel(connection),
+    Announcement: createAnnouncementModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -89,7 +94,19 @@ export function createContainer(
     notifications,
     reports,
   ]);
-  const settings = new SettingsService(models.Settings, models.AuditEntry);
+  const settings = new SettingsService(
+    models.Settings,
+    models.AuditEntry,
+    models.Part,
+    models.User,
+  );
+  const announcements = new AnnouncementsService({
+    announcements: models.Announcement,
+    notifications: models.Notification,
+    users: models.User,
+    parts: models.Part,
+    audit: models.AuditEntry,
+  });
   const requireAuth = authenticate({ tokens, sessions, users });
   // The dashboard, only when it has a signing key.
   const adminAuth = env.ADMIN_JWT_SECRET
@@ -128,6 +145,7 @@ export function createContainer(
     adminAuth,
     moderation,
     settings,
+    announcements,
     requireAuth,
     optionalAuth: optionalAuthenticate(requireAuth),
   };

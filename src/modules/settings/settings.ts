@@ -2,12 +2,15 @@ import { Router, type RequestHandler } from 'express';
 import { Schema, type Connection, type InferSchemaType, type Model } from 'mongoose';
 import { z } from 'zod';
 
-import { notFound } from '../../common/http/errors.js';
+import { AppError, ErrorCode, notFound } from '../../common/http/errors.js';
 import { send } from '../../common/http/response.js';
 import { parseBody } from '../../common/http/validate.js';
 import type { AdminActor } from '../admin/admin-auth.js';
 import type { AuditModel } from '../admin/admin.model.js';
 import { phone } from '../auth/auth.schemas.js';
+import { DEFAULT_CAR_BRANDS, setCarBrands, type CarBrand } from '../catalog/catalog.js';
+import type { PartModel } from '../parts/part.model.js';
+import type { UserModel } from '../users/user.model.js';
 import defaults from './default-content.json' with { type: 'json' };
 
 /** The texts the app shows that the dashboard edits. */
@@ -59,6 +62,14 @@ const settingsSchema = new Schema(
     terms: { type: documentSchema, default: null },
     privacy: { type: documentSchema, default: null },
     faq: { type: documentSchema, default: null },
+    /** Car makes and their models, as `carsInput` checks them; null: the launch list. */
+    cars: {
+      type: new Schema(
+        { brands: { type: Schema.Types.Mixed, required: true }, updatedAt: Date },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { timestamps: true, collection: 'app_settings' },
 );
@@ -103,6 +114,56 @@ export const documentInput = z.strictObject({
     .max(50, 'validation.query'),
 });
 
+const code = z
+  .string('validation.required')
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9-]{0,39}$/, 'validation.query');
+const carName = text(60);
+const year = z
+  .number('validation.required')
+  .int('validation.query')
+  .min(1950, 'validation.query')
+  .max(new Date().getUTCFullYear() + 2, 'validation.query');
+
+/** Every make with its models; codes are what parts and users' cars keep. */
+export const carsInput = z
+  .strictObject({
+    brands: z
+      .array(
+        z.strictObject({
+          id: code,
+          nameAr: carName,
+          nameEn: carName,
+          models: z
+            .array(
+              z
+                .strictObject({
+                  id: code,
+                  nameAr: carName,
+                  nameEn: carName,
+                  fromYear: year,
+                  toYear: year.nullable(),
+                })
+                .refine((model) => model.toYear === null || model.toYear >= model.fromYear, {
+                  message: 'validation.query',
+                  path: ['toYear'],
+                }),
+            )
+            .min(1, 'validation.required')
+            .max(200, 'validation.query'),
+        }),
+      )
+      .min(1, 'validation.required')
+      .max(200, 'validation.query'),
+  })
+  .refine(
+    ({ brands }) =>
+      new Set(brands.map((brand) => brand.id)).size === brands.length &&
+      brands.every((brand) => new Set(brand.models.map((m) => m.id)).size === brand.models.length),
+    { message: 'admin.carsDuplicate', path: ['brands'] },
+  );
+
 type Section = z.infer<typeof documentInput>['sections'][number];
 type Document = { sections: Section[]; updatedAt: Date };
 
@@ -115,11 +176,18 @@ export class SettingsService {
   constructor(
     private readonly settings: SettingsModel,
     private readonly audit: AuditModel,
+    private readonly parts: PartModel,
+    private readonly users: UserModel,
   ) {}
 
-  /** Everything the app shows, edited or not. */
+  /**
+   * Everything the app shows, edited or not. Reading it also puts the saved
+   * cars in use, so every server catches up with an owner's edit.
+   */
   async current() {
     const stored = await this.settings.findById('app').lean().exec();
+    const cars = (stored?.cars?.brands as CarBrand[] | undefined) ?? null;
+    setCarBrands(cars);
     const documentOf = (name: DocumentName): Document => {
       const saved = stored?.[name];
       return saved?.sections?.length
@@ -134,8 +202,50 @@ export class SettingsService {
       terms: documentOf('terms'),
       privacy: documentOf('privacy'),
       faq: documentOf('faq'),
+      cars: {
+        brands: cars ?? DEFAULT_CAR_BRANDS,
+        updatedAt: stored?.cars?.updatedAt ?? null,
+      },
       updatedAt: stored?.updatedAt ?? null,
     };
+  }
+
+  /**
+   * Replaces the car list. A make or model that parts or users' cars still
+   * use cannot go; renaming it or changing its years is fine.
+   */
+  async updateCars(actor: AdminActor, input: z.infer<typeof carsInput>) {
+    const before = (await this.current()).cars.brands;
+    const kept = new Set(
+      input.brands.flatMap((brand) => brand.models.map((model) => `${brand.id}/${model.id}`)),
+    );
+    for (const brand of before) {
+      for (const model of brand.models) {
+        if (kept.has(`${brand.id}/${model.id}`)) continue;
+        const pair = { brandId: brand.id, modelId: model.id };
+        const [part, user] = await Promise.all([
+          this.parts.exists({ fitments: { $elemMatch: pair } }).exec(),
+          this.users.exists({ cars: { $elemMatch: pair } }).exec(),
+        ]);
+        if (part || user) {
+          throw new AppError(409, ErrorCode.CARS_IN_USE, 'admin.carsInUse', [
+            `${brand.nameAr} ${model.nameAr}`,
+          ]);
+        }
+      }
+    }
+    await this.settings
+      .updateOne(
+        { _id: 'app' },
+        { $set: { cars: { brands: input.brands, updatedAt: new Date() } } },
+        { upsert: true },
+      )
+      .exec();
+    await this.log(actor, 'CARS_UPDATED', 'cars', {
+      brands: input.brands.length,
+      models: kept.size,
+    });
+    return this.current();
   }
 
   async updateSupport(actor: AdminActor, input: z.infer<typeof supportInput>) {
@@ -175,13 +285,20 @@ export class SettingsService {
   }
 }
 
-/** `GET /app-config`: public, read by the app on launch. */
-export function appConfigRoutes(settings: SettingsService): Router {
+/**
+ * `GET /app-config`: public, read by the app on launch. With [banner], the
+ * announcement shown on the home screen, if one is up.
+ */
+export function appConfigRoutes(
+  settings: SettingsService,
+  banner: () => Promise<object | null>,
+): Router {
   const router = Router();
   router.get('/', async (_req, res) => {
     // A few minutes stale is fine; it changes rarely.
     res.setHeader('Cache-Control', 'public, max-age=300');
-    send(res, { data: await settings.current() });
+    const [current, announcement] = await Promise.all([settings.current(), banner()]);
+    send(res, { data: { ...current, announcement } });
   });
   return router;
 }
@@ -196,6 +313,10 @@ export function settingsAdminRoutes(settings: SettingsService, owner: RequestHan
   router.put('/support', async (req, res) => {
     const input = parseBody(supportInput, req);
     send(res, { message: 'admin.saved', data: await settings.updateSupport(req.admin!, input) });
+  });
+  router.put('/cars', async (req, res) => {
+    const input = parseBody(carsInput, req);
+    send(res, { message: 'admin.saved', data: await settings.updateCars(req.admin!, input) });
   });
   router.put('/documents/:name', async (req, res) => {
     const name = req.params.name as DocumentName;
