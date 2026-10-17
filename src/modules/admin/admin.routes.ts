@@ -17,10 +17,15 @@ import {
   usersQuerySchema,
   userUpdateSchema,
 } from './admin.schemas.js';
+import { settingsAdminRoutes, type SettingsService } from '../settings/settings.js';
 import type { ModerationService } from './moderation.service.js';
 
 /** The dashboard's API, under `/api/v1/admin` (see `docs/api-contract.md`). */
-export function adminRoutes(auth: AdminAuthService, moderation: ModerationService): Router {
+export function adminRoutes(
+  auth: AdminAuthService,
+  moderation: ModerationService,
+  settings: SettingsService,
+): Router {
   const router = Router();
   const signedIn = requireAdmin(auth);
   const owner = requireRole('OWNER');
@@ -102,6 +107,10 @@ export function adminRoutes(auth: AdminAuthService, moderation: ModerationServic
     await moderation.removePart(req.admin!, req.params.id as string, note);
     send(res, { message: 'parts.deleted' });
   });
+
+  // ---- What the app says about 3arabity (owners) ----
+
+  router.use('/settings', settingsAdminRoutes(settings, owner));
 
   // ---- The log (owners) ----
 

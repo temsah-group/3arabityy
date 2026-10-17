@@ -307,3 +307,75 @@ describe('listings', () => {
     });
   });
 });
+
+describe('app settings', () => {
+  it('serves the launch texts until an owner edits them', async () => {
+    const config = await app.api.get('/api/v1/app-config').expect(200);
+    expect(config.headers['cache-control']).toContain('max-age');
+    expect(config.body.data.support).toEqual({
+      email: 'support@3arabity.com',
+      phone: '+201000000000',
+      whatsapp: '+201000000000',
+    });
+    expect(config.body.data.terms.sections.length).toBeGreaterThan(3);
+    expect(config.body.data.faq.sections[0].titleAr).toBeTruthy();
+
+    const moderator = await admin('MODERATOR');
+    await app.api
+      .put(`${ADMIN}/settings/support`)
+      .set(auth(moderator))
+      .send({ email: 'help@3arabity.com', phone: '+201112223334', whatsapp: '+201112223334' })
+      .expect(403);
+
+    const owner = await admin('OWNER');
+    await app.api
+      .put(`${ADMIN}/settings/support`)
+      .set(auth(owner))
+      .send({ email: 'not-an-email', phone: '+201112223334', whatsapp: '+201112223334' })
+      .expect(400);
+    await app.api
+      .put(`${ADMIN}/settings/support`)
+      .set(auth(owner))
+      .send({ email: 'help@3arabity.com', phone: '+201112223334', whatsapp: '+201112223335' })
+      .expect(200);
+    const privacy = [
+      { titleAr: 'بياناتك', titleEn: 'Your data', bodyAr: 'نص جديد', bodyEn: 'New text' },
+    ];
+    await app.api
+      .put(`${ADMIN}/settings/documents/privacy`)
+      .set(auth(owner))
+      .send({ sections: privacy })
+      .expect(200);
+    await app.api
+      .put(`${ADMIN}/settings/documents/privacy`)
+      .set(auth(owner))
+      .send({ sections: [] })
+      .expect(400);
+    await app.api
+      .put(`${ADMIN}/settings/documents/cookies`)
+      .set(auth(owner))
+      .send({ sections: privacy })
+      .expect(404);
+
+    const after = (await app.api.get('/api/v1/app-config').expect(200)).body.data;
+    expect(after.support).toEqual({
+      email: 'help@3arabity.com',
+      phone: '+201112223334',
+      whatsapp: '+201112223335',
+    });
+    expect(after.privacy.sections).toEqual(privacy);
+    expect(new Date(after.privacy.updatedAt).getTime()).toBeGreaterThan(
+      new Date(config.body.data.privacy.updatedAt).getTime(),
+    );
+    // The terms were not touched.
+    expect(after.terms).toEqual(config.body.data.terms);
+
+    const log = await app.api.get(`${ADMIN}/audit`).set(auth(owner)).expect(200);
+    expect(
+      log.body.data.items.map((e: { action: string; targetId: string }) => [e.action, e.targetId]),
+    ).toEqual([
+      ['DOCUMENT_UPDATED', 'privacy'],
+      ['SUPPORT_UPDATED', 'support'],
+    ]);
+  });
+});

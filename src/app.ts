@@ -13,6 +13,7 @@ import { partsRoutes, uploadRoutes } from './modules/parts/parts.routes.js';
 import { reportsRoutes } from './modules/reports/reports.js';
 import { savedRoutes } from './modules/saved/saved.routes.js';
 import { sellersRoutes } from './modules/sellers/sellers.routes.js';
+import { appConfigRoutes } from './modules/settings/settings.js';
 import { UPLOADS_ROUTE } from './modules/users/photo-storage.js';
 import { usersRoutes } from './modules/users/users.routes.js';
 
@@ -34,7 +35,7 @@ export function createApp(container: Container) {
     app.use(
       `${API_PREFIX}/admin`,
       cors({ origin: env.ADMIN_ORIGINS.length ? env.ADMIN_ORIGINS : false }),
-      adminRoutes(container.adminAuth, container.moderation),
+      adminRoutes(container.adminAuth, container.moderation, container.settings),
     );
   }
 
@@ -52,6 +53,7 @@ export function createApp(container: Container) {
   api.use('/sellers', sellersRoutes(container.sellers, container.parts, container.optionalAuth));
   api.use('/notifications', notificationsRoutes(container.notifications, container.requireAuth));
   api.use('/reports', reportsRoutes(container.reports, container.requireAuth));
+  api.use('/app-config', appConfigRoutes(container.settings));
   app.use(API_PREFIX, api);
 
   // Uploaded photos. Names are random and never reused, so they cache for good.

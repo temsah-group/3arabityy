@@ -24,6 +24,7 @@ import { createReportModel, ReportsService } from './modules/reports/reports.js'
 import { createSavedPartModel } from './modules/saved/saved.model.js';
 import { SavedService } from './modules/saved/saved.service.js';
 import { SellersService } from './modules/sellers/sellers.routes.js';
+import { createSettingsModel, SettingsService } from './modules/settings/settings.js';
 import { createUserModel } from './modules/users/user.model.js';
 import { AccountService } from './modules/users/account.service.js';
 import { PhotoStorage } from './modules/users/photo-storage.js';
@@ -47,6 +48,7 @@ export function createContainer(
     Report: createReportModel(connection),
     Admin: createAdminModel(connection),
     AuditEntry: createAuditModel(connection),
+    Settings: createSettingsModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -87,6 +89,7 @@ export function createContainer(
     notifications,
     reports,
   ]);
+  const settings = new SettingsService(models.Settings, models.AuditEntry);
   const requireAuth = authenticate({ tokens, sessions, users });
   // The dashboard, only when it has a signing key.
   const adminAuth = env.ADMIN_JWT_SECRET
@@ -124,6 +127,7 @@ export function createContainer(
     account,
     adminAuth,
     moderation,
+    settings,
     requireAuth,
     optionalAuth: optionalAuthenticate(requireAuth),
   };

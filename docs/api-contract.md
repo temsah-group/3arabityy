@@ -376,6 +376,9 @@ Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
 | GET    | `/admin/parts/:id`                   | part, seller, stats, open reports, history                                | all   |
 | PATCH  | `/admin/parts/:id`                   | `{ "hidden"?, "featured"?, "note" }`; `featured` owners only              | all   |
 | DELETE | `/admin/parts/:id`                   | `{ "note" }`                                                              | all   |
+| GET    | `/admin/settings`                    | as `/app-config`                                                          | owner |
+| PUT    | `/admin/settings/support`            | `{ "email", "phone", "whatsapp" }` (E.164)                                | owner |
+| PUT    | `/admin/settings/documents/:name`    | `terms\|privacy\|faq`: `{ "sections": [...] }` (1–50)                     | owner |
 | GET    | `/admin/audit`                       | `?targetId=&adminId=`                                                     | owner |
 
 Roles: `OWNER` does everything; `MODERATOR` cannot verify sellers, feature
@@ -393,6 +396,24 @@ the user.
   hiding, showing and removal (params `["HIDDEN"|"RESTORED"|"REMOVED", name]`).
 - **Resolving** closes every open report on that target, keeping the
   action, note, admin and time.
+
+### App config ✅ 👁
+
+`GET /app-config` → what the app says about 3arabity, edited from the dashboard:
+
+```json
+{
+  "support": { "email": "…", "phone": "+20…", "whatsapp": "+20…" },
+  "terms":   { "sections": [{ "titleAr", "titleEn", "bodyAr", "bodyEn" }], "updatedAt": "…" },
+  "privacy": { "sections": [...], "updatedAt": "…" },
+  "faq":     { "sections": [...], "updatedAt": "…" },
+  "updatedAt": "…" | null
+}
+```
+
+FAQ sections are questions (`title…`) and answers (`body…`). `{supportEmail}`
+in any text stands for `support.email`. Never-edited parts are the launch
+texts. Cached for five minutes (`Cache-Control`).
 
 ### Health ✅
 
