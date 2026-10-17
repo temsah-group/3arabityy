@@ -206,6 +206,7 @@ saved parts and reports they made (🔜 once those exist).
 | GET    | `/parts`             | 👁         | see **Search** below                  | page of Part                                                                 |
 | GET    | `/parts/featured`    | 👁         | `condition?, cars?, limit?`           | `{ items: [Part] }`                                                          |
 | GET    | `/parts/home`        | 👁         | `condition?, cars?`                   | `{ featured: [Part] (≤ 8), latest: [Part] (≤ 6), fittingCount }`             |
+| GET    | `/parts/batch`       | 👁         | `ids=a,b,…` (≤ 50)                    | `{ items: [Part] }` in that order, sold included, unknown skipped; no views  |
 | GET    | `/parts/:id`         | 👁         |                                       | Part; counts a view unless it is the caller's own                            |
 | GET    | `/parts/:id/similar` | 👁         | `limit?`                              | `{ items: [Part] }` (same category or same models, never itself, never sold) |
 | GET    | `/parts/mine`        | 🔒        | page; sold included                   | page of Part (with `stats`)                                                  |

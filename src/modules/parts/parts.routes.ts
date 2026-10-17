@@ -7,6 +7,7 @@ import { parseBody, parseQuery } from '../../common/http/validate.js';
 import { limit } from '../../middleware/rate-limit.js';
 import { MAX_PART_PHOTO_MB, photoExtension } from '../users/photo-storage.js';
 import {
+  batchQuerySchema,
   contactSchema,
   createPartSchema,
   featuredQuerySchema,
@@ -57,6 +58,12 @@ export function partsRoutes(
 
   router.get('/home', optionalAuth, async (req, res) => {
     send(res, { data: await parts.home(parseQuery(homeQuerySchema, req), viewer(req)) });
+  });
+
+  // Never counts a view: the app fills in parts it only knows by id.
+  router.get('/batch', optionalAuth, async (req, res) => {
+    const { ids } = parseQuery(batchQuerySchema, req);
+    send(res, { data: { items: await parts.byIds(ids, viewer(req)) } });
   });
 
   router.get('/mine', requireAuth, async (req, res) => {

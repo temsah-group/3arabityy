@@ -107,6 +107,15 @@ export class PartsService {
     return this.page({ sellerId: new Types.ObjectId(userId) }, 'NEWEST', cursor, limit, userId);
   }
 
+  /** The parts with [ids] buyers may see, sold or not, in the order given; unknown ids are skipped. */
+  async byIds(ids: string[], viewerId?: string): Promise<PublicPart[]> {
+    const valid = ids.filter((id) => Types.ObjectId.isValid(id));
+    return this.presentIds(
+      valid.map((id) => new Types.ObjectId(id)),
+      viewerId,
+    );
+  }
+
   /** One part, sold or not; a buyer's visit counts as a view. Hidden: its seller's only. */
   async byId(id: string, viewerId?: string): Promise<PublicPart> {
     const part = await this.find(id);

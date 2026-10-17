@@ -337,6 +337,29 @@ describe('the home screen', () => {
 
     await app.api.get('/api/v1/parts/home?condition=SHINY').expect(400);
   });
+
+  it('fills in parts known by id, in order, without counting views', async () => {
+    const seller = await account('seller@example.com');
+    const make = async (name: string) =>
+      (
+        await app.api
+          .post('/api/v1/parts')
+          .set(auth(seller.token))
+          .send(pads(['https://images.example.com/a.jpg'], { name, oldPrice: null }))
+          .expect(201)
+      ).body.data.id as string;
+    const a = await make('فلتر هواء');
+    const b = await make('طلمبة بنزين');
+    await app.api.post(`/api/v1/parts/${b}/sold`).set(auth(seller.token)).send({ sold: true });
+    const res = await app.api
+      .get(`/api/v1/parts/batch?ids=${b},nope,${a},${a},0123456789abcdef01234567`)
+      .expect(200);
+    expect(res.body.data.items.map((p: { id: string }) => p.id)).toEqual([b, a]);
+    expect(res.body.data.items[0].isSold).toBe(true);
+    const part = await app.container.models.Part.findById(a);
+    expect(part?.stats?.views).toBe(0);
+    await app.api.get('/api/v1/parts/batch').expect(400);
+  });
 });
 
 describe('managing a listing', () => {

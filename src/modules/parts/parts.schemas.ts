@@ -146,6 +146,15 @@ export const featuredQuerySchema = z.object({
     .default(8),
 });
 
+/** `?ids=a,b,c`: parts the app knows by id (saved or recently viewed), at most 50. */
+export const batchQuerySchema = z.object({
+  ids: z
+    .string('validation.required')
+    .max(50 * 25, 'validation.query')
+    .transform((value) => [...new Set(value.split(',').map((id) => id.trim()))].filter(Boolean))
+    .refine((ids) => ids.length > 0 && ids.length <= 50, 'validation.query'),
+});
+
 /** The app's home screen: what it shows, narrowed to a condition and the user's cars. */
 export const homeQuerySchema = z.object({
   condition: z.enum(PART_CONDITIONS, 'validation.query').optional(),
