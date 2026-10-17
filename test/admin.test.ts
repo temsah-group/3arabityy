@@ -268,6 +268,9 @@ describe('listings', () => {
 
     const hidden = await app.api.get(`${ADMIN}/parts?status=HIDDEN`).set(auth(token)).expect(200);
     expect(hidden.body.data.items[0]).toMatchObject({ id: part.id, hiddenReason: 'ADMIN' });
+    // Its photos load in the dashboard, on another domain.
+    const photo = await app.api.get(hidden.body.data.items[0].images[0]).expect(200);
+    expect(photo.headers['cross-origin-resource-policy']).toBe('cross-origin');
 
     await app.api
       .patch(`${ADMIN}/parts/${part.id}`)

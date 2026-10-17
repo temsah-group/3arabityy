@@ -57,7 +57,13 @@ export function createApp(container: Container) {
   // Uploaded photos. Names are random and never reused, so they cache for good.
   app.use(
     UPLOADS_ROUTE,
-    express.static(env.UPLOADS_DIR, { immutable: true, maxAge: '365d', index: false }),
+    express.static(env.UPLOADS_DIR, {
+      immutable: true,
+      maxAge: '365d',
+      index: false,
+      // The dashboard shows them from its own domain.
+      setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
+    }),
   );
 
   app.use(notFoundHandler);
