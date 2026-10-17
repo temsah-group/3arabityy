@@ -39,6 +39,13 @@ const partSchema = new Schema(
     phone: { type: String, required: true },
     isFeatured: { type: Boolean, default: false },
     isSold: { type: Boolean, default: false },
+    /**
+     * Set when 3arabity hides the part: by a moderator (`ADMIN`) or with its
+     * seller's suspension (`SUSPENDED`). Hidden parts are left out of
+     * everything buyers see; the seller still sees them.
+     */
+    hiddenAt: { type: Date, default: null },
+    hiddenReason: { type: String, enum: ['ADMIN', 'SUSPENDED', null], default: null },
     /** When it went up or was last renewed; "latest" sorts by it. */
     listedAt: { type: Date, default: () => new Date() },
     stats: {
@@ -58,6 +65,9 @@ partSchema.index({ sellerId: 1, listedAt: -1 });
 partSchema.index({ 'fitments.brandId': 1, 'fitments.modelId': 1 });
 
 export type Part = InferSchemaType<typeof partSchema>;
+
+/** Parts buyers may see: not hidden by 3arabity. */
+export const VISIBLE = { hiddenAt: null } as const;
 export type PartDocument = HydratedDocument<Part>;
 export type PartModel = Model<Part>;
 

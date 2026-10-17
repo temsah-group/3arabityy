@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import { AppError, ErrorCode } from '../../common/http/errors.js';
 import { send } from '../../common/http/response.js';
 import { parseQuery } from '../../common/http/validate.js';
-import type { PartModel } from '../parts/part.model.js';
+import { VISIBLE, type PartModel } from '../parts/part.model.js';
 import { listQuerySchema } from '../parts/parts.schemas.js';
 import type { PartsService } from '../parts/parts.service.js';
 import type { UserModel } from '../users/user.model.js';
@@ -31,11 +31,15 @@ export class SellersService {
     const sellerId = new Types.ObjectId(id);
     const [forSale, latest] = await Promise.all([
       this.parts
-        .find({ sellerId, isSold: false })
+        .find({ sellerId, ...VISIBLE, isSold: false })
         .select('category city listedAt')
         .sort({ listedAt: -1 })
         .exec(),
-      this.parts.findOne({ sellerId }).sort({ listedAt: -1 }).select('phone city').exec(),
+      this.parts
+        .findOne({ sellerId, ...VISIBLE })
+        .sort({ listedAt: -1 })
+        .select('phone city')
+        .exec(),
     ]);
     // Where most of their parts are.
     const cities = new Map<string, number>();

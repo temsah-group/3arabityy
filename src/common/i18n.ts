@@ -251,6 +251,42 @@ const messages = {
     en: 'The photo is larger than {0} MB',
   },
 
+  'notifications.listingHiddenTitle': {
+    ar: 'إعلانك اتخفى',
+    en: 'Your listing was hidden',
+  },
+  'notifications.listingHiddenBody': {
+    ar: 'إعلان "{0}" مش ظاهر للمشترين لأنه مخالف لشروط النشر. تواصل مع الدعم لو عندك استفسار.',
+    en: '"{0}" is no longer shown to buyers because it breaks the listing rules. Contact support with any questions.',
+  },
+  'notifications.listingRestoredTitle': {
+    ar: 'إعلانك رجع يظهر',
+    en: 'Your listing is back',
+  },
+  'notifications.listingRestoredBody': {
+    ar: 'إعلان "{0}" رجع يظهر للمشترين.',
+    en: '"{0}" is shown to buyers again.',
+  },
+  'notifications.listingRemovedTitle': {
+    ar: 'إعلانك اتشال',
+    en: 'Your listing was removed',
+  },
+  'notifications.listingRemovedBody': {
+    ar: 'إعلان "{0}" اتشال لأنه مخالف لشروط النشر. تواصل مع الدعم لو عندك استفسار.',
+    en: '"{0}" was removed because it breaks the listing rules. Contact support with any questions.',
+  },
+
+  'admin.roleRequired': {
+    ar: 'الصلاحية دي للمالك بس',
+    en: 'Only an owner can do this',
+  },
+  'admin.noteRequired': {
+    ar: 'اكتب سبب الإجراء ده',
+    en: 'Write the reason for this action',
+  },
+  'admin.userNotFound': { ar: 'المستخدم ده مش موجود', en: 'This user does not exist' },
+  'admin.saved': { ar: 'تم الحفظ', en: 'Saved' },
+
   'mail.otpSubject.register': {
     ar: 'رمز تأكيد حسابك في عربيتي',
     en: 'Your 3arabity confirmation code',

@@ -21,6 +21,10 @@ export const REPORT_REASONS = [
   'OTHER',
 ] as const;
 
+/** What a moderator did about a target's reports. */
+export const REPORT_ACTIONS = ['DISMISS', 'HIDE_PART', 'REMOVE_PART', 'SUSPEND_SELLER'] as const;
+export type ReportAction = (typeof REPORT_ACTIONS)[number];
+
 /** Which reasons suit which target (the app's `ReportReason.targets`). */
 const REASONS_FOR: Record<(typeof REPORT_TARGETS)[number], readonly string[]> = {
   PART: ['FAKE', 'WRONG_INFO', 'COUNTERFEIT', 'STOLEN', 'SCAM', 'OTHER'],
@@ -36,14 +40,29 @@ const reportSchema = new Schema(
     reason: { type: String, enum: REPORT_REASONS, required: true },
     details: { type: String, default: null },
     status: { type: String, enum: ['OPEN', 'CLOSED'], default: 'OPEN' },
+    /** How a moderator closed it, from the dashboard. */
+    resolution: {
+      type: new Schema(
+        {
+          action: { type: String, enum: REPORT_ACTIONS, required: true },
+          note: { type: String, default: null },
+          adminId: { type: Schema.Types.ObjectId, ref: 'Admin', required: true },
+          at: { type: Date, required: true },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { timestamps: true, collection: 'reports' },
 );
 
 reportSchema.index({ reporterId: 1, target: 1, targetId: 1 }, { unique: true });
 reportSchema.index({ target: 1, targetId: 1, status: 1 });
+reportSchema.index({ status: 1, createdAt: -1 });
 
 export type Report = InferSchemaType<typeof reportSchema>;
+export type ReportTarget = (typeof REPORT_TARGETS)[number];
 export type ReportModel = Model<Report>;
 
 export const createReportModel = (connection: Connection): ReportModel =>

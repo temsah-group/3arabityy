@@ -17,7 +17,7 @@ type SamplePart = (typeof sampleParts)[number];
  */
 export async function seedSampleData(
   container: Container,
-): Promise<{ sellers: number; parts: number }> {
+): Promise<{ sellers: number; parts: number; reports: number }> {
   const { User, Part } = container.models;
   const passwordHash = await hashPassword(SAMPLE_PASSWORD);
 
@@ -36,7 +36,7 @@ export async function seedSampleData(
     sellers.set(part.seller.id, user._id);
   }
 
-  await Part.insertMany(
+  const parts = await Part.insertMany(
     (sampleParts as SamplePart[]).map((part) => ({
       sellerId: sellers.get(part.seller.id),
       name: part.name,
@@ -64,5 +64,35 @@ export async function seedSampleData(
       }),
     })),
   );
-  return { sellers: sellers.size, parts: sampleParts.length };
+
+  // The dashboard: an owner and a moderator, and a few reports to review.
+  const { Admin, Report } = container.models;
+  await Admin.create([
+    { email: 'admin@example.com', fullName: 'مدير عربيتي', role: 'OWNER', passwordHash },
+    { email: 'moderator@example.com', fullName: 'مشرف عربيتي', role: 'MODERATOR', passwordHash },
+  ]);
+  const accounts = [...sellers.values()];
+  const reports: object[] = [];
+  for (const [index, part] of parts.slice(0, 3).entries()) {
+    const reporters = accounts.filter((id) => !id.equals(part.sellerId)).slice(0, 3 - index);
+    for (const reporterId of reporters) {
+      reports.push({
+        reporterId,
+        target: 'PART',
+        targetId: part._id,
+        reason: index === 0 ? 'FAKE' : 'WRONG_INFO',
+      });
+    }
+  }
+  const reported = parts[0]!.sellerId;
+  reports.push({
+    reporterId: accounts.find((id) => !id.equals(reported)),
+    target: 'SELLER',
+    targetId: reported,
+    reason: 'OTHER',
+    details: 'بيطلب عربون قبل ما يوريني القطعة',
+  });
+  await Report.insertMany(reports);
+
+  return { sellers: sellers.size, parts: sampleParts.length, reports: reports.length };
 }

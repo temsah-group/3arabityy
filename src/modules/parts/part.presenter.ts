@@ -48,6 +48,7 @@ export function presentPart(
     },
     ...(viewerId === sellerId
       ? {
+          isHidden: part.hiddenAt != null,
           stats: {
             views: part.stats?.views ?? 0,
             calls: part.stats?.calls ?? 0,

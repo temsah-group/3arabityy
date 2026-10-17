@@ -42,6 +42,10 @@ export const ErrorCode = {
   SELLER_NOT_FOUND: 'SELLER_NOT_FOUND',
   ALREADY_REPORTED: 'ALREADY_REPORTED',
   CANNOT_REPORT_SELF: 'CANNOT_REPORT_SELF',
+
+  ADMIN_ROLE_REQUIRED: 'ADMIN_ROLE_REQUIRED',
+  NOTE_REQUIRED: 'NOTE_REQUIRED',
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

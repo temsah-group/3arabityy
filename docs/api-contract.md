@@ -307,8 +307,8 @@ app knows its saved ids from this list.
   unless `fitsMyCar` is off; never to its seller;
 - `PRICE_DROP` ✅ when a saved part's price goes down, unless `priceDrops` is
   off;
-- `LISTING` 🔜 for news about the user's own parts (renewal reminders after 30
-  days, a part removed after reports);
+- `LISTING` for news about the user's own parts: ✅ hidden, shown again or
+  removed by a moderator; 🔜 renewal reminders after 30 days;
 - `SYSTEM` 🔜 for announcements.
 
 Deleting a part deletes its notifications. Devices are stored; sending push
@@ -338,6 +338,55 @@ account id (the part's `seller.id`). Reporting one's own part or oneself is
 `400 CANNOT_REPORT_SELF`; an unknown target `404 PART_NOT_FOUND` or
 `SELLER_NOT_FOUND`.
 
+### Admin dashboard ✅ (`/admin`)
+
+For the dashboard only (the separate `3arabity-admin` project), never the app.
+Served only when `ADMIN_JWT_SECRET` is set; browsers only from
+`ADMIN_ORIGINS`. Admins are their own accounts (`admins` collection), made
+with `npm run admin:create`; app tokens are refused (401) and admin tokens
+open none of the app's routes.
+
+`POST /admin/auth/login` `{ "email", "password" }` → `{ accessToken,
+expiresInSeconds, admin: { id, email, fullName, role, lastLoginAt } }`. One
+token, `ADMIN_TOKEN_HOURS` long, no refresh; five wrong passwords lock the
+admin for 15 minutes (`429 ACCOUNT_LOCKED`). Everything else needs
+`Authorization: Bearer <admin token>`.
+
+Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
+`{ items, total, page, pageSize }`.
+
+| Method | Path                                 | Body / query                                                              | Who   |
+| ------ | ------------------------------------ | ------------------------------------------------------------------------- | ----- |
+| GET    | `/admin/auth/me`                     |                                                                           | all   |
+| GET    | `/admin/overview`                    | counts of users, parts and open reports                                   | all   |
+| GET    | `/admin/reports`                     | `?status=OPEN\|CLOSED&target=PART\|SELLER`, grouped by target             | all   |
+| GET    | `/admin/reports/:target/:id`         | every report on it, with reporters                                        | all   |
+| POST   | `/admin/reports/:target/:id/resolve` | `{ "action": "DISMISS\|HIDE_PART\|REMOVE_PART\|SUSPEND_SELLER", "note" }` | all   |
+| GET    | `/admin/users`                       | `?q=&status=ACTIVE\|SUSPENDED&verified=true\|false`                       | all   |
+| GET    | `/admin/users/:id`                   | account, counts, cars, history                                            | all   |
+| PATCH  | `/admin/users/:id`                   | `{ "status"?, "verified"?, "note" }`; `verified` owners only              | all   |
+| GET    | `/admin/parts`                       | `?q=&status=FOR_SALE\|SOLD\|HIDDEN&featured=&sellerId=`                   | all   |
+| GET    | `/admin/parts/:id`                   | part, seller, stats, open reports, history                                | all   |
+| PATCH  | `/admin/parts/:id`                   | `{ "hidden"?, "featured"?, "note" }`; `featured` owners only              | all   |
+| DELETE | `/admin/parts/:id`                   | `{ "note" }`                                                              | all   |
+| GET    | `/admin/audit`                       | `?targetId=&adminId=`                                                     | owner |
+
+Roles: `OWNER` does everything; `MODERATOR` cannot verify sellers, feature
+parts or read the log (`403 ADMIN_ROLE_REQUIRED`). Suspending, restoring,
+hiding, showing, removing and every resolution but `DISMISS` need a `note`
+of ≥ 3 characters (`400 NOTE_REQUIRED`); it goes to the audit log, never to
+the user.
+
+- **Suspending** signs the account out everywhere and hides all its parts;
+  restoring shows again the parts the suspension hid (not ones a moderator
+  hid).
+- **Hidden parts** are left out of search, featured, similar, sellers' pages
+  and saved lists, and `GET /parts/:id` is 404 for anyone but their seller,
+  who sees `isHidden: true`. The seller gets a `LISTING` notification on
+  hiding, showing and removal (params `["HIDDEN"|"RESTORED"|"REMOVED", name]`).
+- **Resolving** closes every open report on that target, keeping the
+  action, note, admin and time.
+
 ### Health ✅
 
 `GET /health` → `{ "status": "ok" | "degraded", "database": "up" | "down" }`.
@@ -346,13 +395,16 @@ account id (the part's `seller.id`). Reporting one's own part or oneself is
 
 ## 4. New error codes
 
-| Code                 | Status | When                                    |
-| -------------------- | ------ | --------------------------------------- |
-| `PART_NOT_FOUND`     | 404    | unknown or deleted part                 |
-| `NOT_PART_OWNER`     | 403    | editing someone else's part             |
-| `TOO_MANY_PHOTOS`    | 400    | more than 8 images                      |
-| `UPLOAD_NOT_OWNED`   | 400    | an image path the caller did not upload |
-| `ALREADY_REPORTED`   | 409    | second report of the same target        |
-| `TOO_MANY_CARS`      | 400    | more than 5 cars                        |
-| `SELLER_NOT_FOUND`   | 404    | unknown seller account                  |
-| `CANNOT_REPORT_SELF` | 400    | reporting one's own part or oneself     |
+| Code                  | Status | When                                    |
+| --------------------- | ------ | --------------------------------------- |
+| `PART_NOT_FOUND`      | 404    | unknown or deleted part                 |
+| `NOT_PART_OWNER`      | 403    | editing someone else's part             |
+| `TOO_MANY_PHOTOS`     | 400    | more than 8 images                      |
+| `UPLOAD_NOT_OWNED`    | 400    | an image path the caller did not upload |
+| `ALREADY_REPORTED`    | 409    | second report of the same target        |
+| `TOO_MANY_CARS`       | 400    | more than 5 cars                        |
+| `SELLER_NOT_FOUND`    | 404    | unknown seller account                  |
+| `CANNOT_REPORT_SELF`  | 400    | reporting one's own part or oneself     |
+| `ADMIN_ROLE_REQUIRED` | 403    | a moderator doing an owner's action     |
+| `NOTE_REQUIRED`       | 400    | an admin action without a reason        |
+| `USER_NOT_FOUND`      | 404    | unknown account, in the dashboard       |

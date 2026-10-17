@@ -20,7 +20,13 @@ To try the app without Atlas or a network:
 npm run dev:memory     # in-memory MongoDB, filled with the app's sample parts
 ```
 
-It starts empty each time and seeds one confirmed account per sample seller: `seller01@example.com` … `seller11@example.com`, password `Password123`. Codes are printed, never emailed. The sample parts come from the app (`src/dev/sample-parts.json`, exported from `mock_parts.dart`).
+It starts empty each time and seeds one confirmed account per sample seller: `seller01@example.com` … `seller11@example.com`, password `Password123`. Codes are printed, never emailed. It also serves the admin dashboard's API for `http://localhost:5173`, with `admin@example.com` (owner) and `moderator@example.com`, same password, and a few reports to review. The sample parts come from the app (`src/dev/sample-parts.json`, exported from `mock_parts.dart`).
+
+Dashboard admins (set `ADMIN_JWT_SECRET` and `ADMIN_ORIGINS` first; there is no sign-up):
+
+```bash
+npm run admin:create -- --email you@example.com --name "Your Name" --role OWNER
+```
 
 ```bash
 npm run typecheck
@@ -71,22 +77,22 @@ The full contract the app reads, built and still to build, is in [`docs/api-cont
 
 ### Auth and account
 
-| Method | Path | Body | Notes |
-| --- | --- | --- | --- |
-| POST | `/auth/register` | `fullName, identifier (email), phone (+20…), password, confirmPassword` | 201, emails a code. An unconfirmed email can sign up again. |
-| POST | `/auth/verify-otp` | `identifier, otp, purpose` (`register` / `password_reset`) | `register` confirms the email; `password_reset` returns `resetToken` (10 min, single use). |
-| POST | `/auth/resend-otp` | `identifier, purpose` | 60 s cooldown (`OTP_RESEND_TOO_SOON`, `retryAfterSeconds`). |
-| POST | `/auth/login` | `identifier, password, rememberMe?` | `accessToken`, `refreshToken`, `user`. Unconfirmed → 403 `ACCOUNT_NOT_VERIFIED` and a fresh code. |
-| POST | `/auth/refresh` | `refreshToken` | Rotates the refresh token. Replaying an old one ends the session (`REFRESH_TOKEN_REUSED`). |
-| POST | `/auth/logout` | — (Bearer) | Ends this session; its access token stops working at once. |
-| POST | `/auth/forgot-password` | `identifier` | Same answer whether or not the email exists. |
-| POST | `/auth/reset-password` | `resetToken, newPassword, confirmPassword` | Signs the user out on every device. |
-| GET / PATCH | `/users/me` | `fullName?, phone?` (PATCH) | Bearer. |
-| PATCH | `/users/me/password` | `currentPassword, newPassword, confirmPassword` | Bearer. Keeps this session, signs out the others. A wrong current password is `400 WRONG_PASSWORD`, never 401. |
-| DELETE | `/users/me` | `password` | Bearer. Deletes the account, its sessions, codes and photo. |
-| POST | `/users/me/photo` | multipart, one image in `photo` | Bearer. JPEG, PNG or WebP (checked by content), up to 5 MB. Returns the user; `profilePhotoUrl` is a path such as `/uploads/avatars/<uuid>.jpg` that the app joins to the server address. |
-| DELETE | `/users/me/photo` | | Bearer. Returns the user with `profilePhotoUrl: null`. |
-| GET | `/health` | — | `{ status, database }`, 503 when the database is down. |
+| Method      | Path                    | Body                                                                    | Notes                                                                                                                                                                                     |
+| ----------- | ----------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST        | `/auth/register`        | `fullName, identifier (email), phone (+20…), password, confirmPassword` | 201, emails a code. An unconfirmed email can sign up again.                                                                                                                               |
+| POST        | `/auth/verify-otp`      | `identifier, otp, purpose` (`register` / `password_reset`)              | `register` confirms the email; `password_reset` returns `resetToken` (10 min, single use).                                                                                                |
+| POST        | `/auth/resend-otp`      | `identifier, purpose`                                                   | 60 s cooldown (`OTP_RESEND_TOO_SOON`, `retryAfterSeconds`).                                                                                                                               |
+| POST        | `/auth/login`           | `identifier, password, rememberMe?`                                     | `accessToken`, `refreshToken`, `user`. Unconfirmed → 403 `ACCOUNT_NOT_VERIFIED` and a fresh code.                                                                                         |
+| POST        | `/auth/refresh`         | `refreshToken`                                                          | Rotates the refresh token. Replaying an old one ends the session (`REFRESH_TOKEN_REUSED`).                                                                                                |
+| POST        | `/auth/logout`          | — (Bearer)                                                              | Ends this session; its access token stops working at once.                                                                                                                                |
+| POST        | `/auth/forgot-password` | `identifier`                                                            | Same answer whether or not the email exists.                                                                                                                                              |
+| POST        | `/auth/reset-password`  | `resetToken, newPassword, confirmPassword`                              | Signs the user out on every device.                                                                                                                                                       |
+| GET / PATCH | `/users/me`             | `fullName?, phone?` (PATCH)                                             | Bearer.                                                                                                                                                                                   |
+| PATCH       | `/users/me/password`    | `currentPassword, newPassword, confirmPassword`                         | Bearer. Keeps this session, signs out the others. A wrong current password is `400 WRONG_PASSWORD`, never 401.                                                                            |
+| DELETE      | `/users/me`             | `password`                                                              | Bearer. Deletes the account, its sessions, codes and photo.                                                                                                                               |
+| POST        | `/users/me/photo`       | multipart, one image in `photo`                                         | Bearer. JPEG, PNG or WebP (checked by content), up to 5 MB. Returns the user; `profilePhotoUrl` is a path such as `/uploads/avatars/<uuid>.jpg` that the app joins to the server address. |
+| DELETE      | `/users/me/photo`       |                                                                         | Bearer. Returns the user with `profilePhotoUrl: null`.                                                                                                                                    |
+| GET         | `/health`               | —                                                                       | `{ status, database }`, 503 when the database is down.                                                                                                                                    |
 
 ## Security notes
 

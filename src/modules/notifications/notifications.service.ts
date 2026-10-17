@@ -14,6 +14,9 @@ import type {
   NotificationModel,
 } from './notification.model.js';
 
+/** What happened to a listing; the first param of a `LISTING` notification. */
+export type ListingChange = 'HIDDEN' | 'RESTORED' | 'REMOVED';
+
 export type NotificationSettings = { fitsMyCar: boolean; priceDrops: boolean; news: boolean };
 
 /** How many users one new part may notify; the rest miss out, the app goes on. */
@@ -151,6 +154,23 @@ export class NotificationsService {
     );
   }
 
+  /**
+   * Tells a seller what 3arabity did to their listing. A removed part's
+   * notice opens nothing, since the part is gone.
+   */
+  async listingNotice(
+    sellerId: Types.ObjectId,
+    change: ListingChange,
+    part: { _id: Types.ObjectId; name: string },
+  ): Promise<void> {
+    await this.send(
+      [sellerId],
+      'LISTING',
+      [change, part.name],
+      change === 'REMOVED' ? null : part._id,
+    );
+  }
+
   /** Deleted parts leave no notifications that open nothing. */
   async partsRemoved(partIds: Types.ObjectId[]): Promise<void> {
     if (partIds.length === 0) return;
@@ -206,6 +226,14 @@ function present(item: NotificationDocument, lang: Lang) {
           t(lang, 'notifications.priceDropTitle'),
           t(lang, 'notifications.priceDropBody', params),
         ];
+      case 'LISTING': {
+        const [change, name] = params;
+        const key = change === 'HIDDEN' ? 'Hidden' : change === 'RESTORED' ? 'Restored' : 'Removed';
+        return [
+          t(lang, `notifications.listing${key}Title`),
+          t(lang, `notifications.listing${key}Body`, [name]),
+        ];
+      }
       // News and announcements carry their own words.
       default:
         return [params[0] ?? '', params[1] ?? ''];

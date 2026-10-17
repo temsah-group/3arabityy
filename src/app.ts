@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import type { Container } from './container.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { language } from './middleware/language.js';
+import { adminRoutes } from './modules/admin/admin.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
@@ -24,10 +25,21 @@ export function createApp(container: Container) {
   app.disable('x-powered-by');
   app.set('trust proxy', env.TRUST_PROXY);
   app.use(helmet());
-  // The mobile app sends no Origin; only listed browser origins are allowed.
-  app.use(cors({ origin: env.CORS_ORIGINS.length ? env.CORS_ORIGINS : false }));
   app.use(express.json({ limit: '100kb' }));
   app.use(language);
+
+  // The dashboard: its own origins, its own accounts. Before the app's CORS,
+  // which would answer the dashboard's preflight without allowing it.
+  if (container.adminAuth) {
+    app.use(
+      `${API_PREFIX}/admin`,
+      cors({ origin: env.ADMIN_ORIGINS.length ? env.ADMIN_ORIGINS : false }),
+      adminRoutes(container.adminAuth, container.moderation),
+    );
+  }
+
+  // The mobile app sends no Origin; only listed browser origins are allowed.
+  app.use(cors({ origin: env.CORS_ORIGINS.length ? env.CORS_ORIGINS : false }));
 
   const api = Router();
   api.use('/health', healthRoutes(container.connection));

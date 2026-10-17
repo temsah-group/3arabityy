@@ -7,6 +7,16 @@ const booleanString = z
 
 const secret = z.string().min(32, 'must be at least 32 characters');
 
+const originList = z
+  .string()
+  .default('')
+  .transform((value) =>
+    value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -23,15 +33,13 @@ const schema = z
     OTP_RESEND_SECONDS: z.coerce.number().int().nonnegative().default(60),
     OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
 
-    CORS_ORIGINS: z
-      .string()
-      .default('')
-      .transform((value) =>
-        value
-          .split(',')
-          .map((origin) => origin.trim())
-          .filter(Boolean),
-      ),
+    CORS_ORIGINS: originList,
+
+    /** Signs the dashboard's tokens; without it `/admin` is not served at all. */
+    ADMIN_JWT_SECRET: z.preprocess((value) => value || undefined, secret.optional()),
+    ADMIN_TOKEN_HOURS: z.coerce.number().int().positive().max(24).default(8),
+    /** The dashboard's address(es), the only browsers allowed to call `/admin`. */
+    ADMIN_ORIGINS: originList,
     TRUST_PROXY: z
       .string()
       .default('false')
@@ -56,6 +64,14 @@ const schema = z
         code: 'custom',
         path: ['JWT_RESET_SECRET'],
         message: 'must differ from JWT_ACCESS_SECRET',
+      });
+    }
+    const userSecrets = [env.JWT_ACCESS_SECRET, env.JWT_RESET_SECRET];
+    if (env.ADMIN_JWT_SECRET && userSecrets.includes(env.ADMIN_JWT_SECRET)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ADMIN_JWT_SECRET'],
+        message: 'must differ from the user token secrets',
       });
     }
     // Production must really deliver codes; the console mailer is for development.

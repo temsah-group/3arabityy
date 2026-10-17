@@ -6,7 +6,7 @@ import { logger } from '../../common/logger.js';
 import { normalizeSearchText, searchableText } from '../catalog/catalog.js';
 import type { PhotoStorage } from '../users/photo-storage.js';
 import type { UserModel } from '../users/user.model.js';
-import type { Part, PartDocument, PartModel } from './part.model.js';
+import { VISIBLE, type Part, type PartDocument, type PartModel } from './part.model.js';
 import { presentPart, type PublicPart, type SellerSummary } from './part.presenter.js';
 import {
   MAX_PART_PHOTOS,
@@ -61,7 +61,7 @@ export class PartsService {
   }
 
   async featured(query: FeaturedQuery, viewerId?: string): Promise<{ items: PublicPart[] }> {
-    const filter: QueryFilter<Part> = { isSold: false, isFeatured: true };
+    const filter: QueryFilter<Part> = { ...VISIBLE, isSold: false, isFeatured: true };
     if (query.condition) filter.condition = query.condition;
     if (query.cars) Object.assign(filter, fitsAny(query.cars));
     const found = await this.parts.find(filter).sort({ listedAt: -1 }).limit(query.limit).exec();
@@ -72,10 +72,11 @@ export class PartsService {
     return this.page({ sellerId: new Types.ObjectId(userId) }, 'NEWEST', cursor, limit, userId);
   }
 
-  /** One part, sold or not; a buyer's visit counts as a view. */
+  /** One part, sold or not; a buyer's visit counts as a view. Hidden: its seller's only. */
   async byId(id: string, viewerId?: string): Promise<PublicPart> {
     const part = await this.find(id);
     if (part.sellerId.toString() !== viewerId) {
+      if (part.hiddenAt) throw notFound();
       await this.parts.updateOne({ _id: part._id }, { $inc: { 'stats.views': 1 } }).exec();
       if (part.stats) part.stats.views += 1;
     }
@@ -89,6 +90,7 @@ export class PartsService {
     const candidates = await this.parts
       .find({
         _id: { $ne: part._id },
+        ...VISIBLE,
         isSold: false,
         $or: [
           { category: part.category },
@@ -174,10 +176,7 @@ export class PartsService {
   }
 
   async remove(userId: string, id: string): Promise<void> {
-    const part = await this.owned(userId, id);
-    await part.deleteOne();
-    await this.dropPhotos(part.images);
-    await this.emit(() => this.events.removed?.([part._id]));
+    await this.takeDown(await this.owned(userId, id));
   }
 
   async setSold(userId: string, id: string, sold: boolean): Promise<PublicPart> {
@@ -204,6 +203,13 @@ export class PartsService {
     await this.parts.updateOne({ _id: part._id }, { $inc: { [field]: 1 } }).exec();
   }
 
+  /** Takes a part down whoever listed it (moderation); returns what it was. */
+  async removeAny(id: string): Promise<PartDocument> {
+    const part = await this.find(id);
+    await this.takeDown(part);
+    return part;
+  }
+
   /** Everything a deleted account listed or uploaded goes with it. */
   async deleteAllOf(userId: string): Promise<void> {
     const owner = new Types.ObjectId(userId);
@@ -218,14 +224,15 @@ export class PartsService {
 
   // ---- For other modules ----
 
-  /** Throws `PART_NOT_FOUND` unless the part exists. */
+  /** Throws `PART_NOT_FOUND` unless the part exists and buyers may see it. */
   async assertExists(id: string): Promise<void> {
-    await this.find(id);
+    const part = await this.find(id);
+    if (part.hiddenAt) throw notFound();
   }
 
-  /** The parts with [ids] that still exist, presented, in the order given. */
+  /** The parts with [ids] that buyers may still see, presented, in the order given. */
   async presentIds(ids: Types.ObjectId[], viewerId?: string): Promise<PublicPart[]> {
-    const found = await this.parts.find({ _id: { $in: ids } }).exec();
+    const found = await this.parts.find({ _id: { $in: ids }, ...VISIBLE }).exec();
     const byId = new Map(found.map((part) => [part.id as string, part]));
     const ordered = ids.map((id) => byId.get(id.toString())).filter((part) => part !== undefined);
     return this.present(ordered, viewerId);
@@ -239,6 +246,12 @@ export class PartsService {
     } catch (error) {
       logger.error('A part event failed', { error: String(error) });
     }
+  }
+
+  private async takeDown(part: PartDocument): Promise<void> {
+    await part.deleteOne();
+    await this.dropPhotos(part.images);
+    await this.emit(() => this.events.removed?.([part._id]));
   }
 
   private async find(id: string): Promise<PartDocument> {
@@ -287,7 +300,7 @@ export class PartsService {
   }
 
   private searchFilter(query: ListQuery): QueryFilter<Part> {
-    const filter: QueryFilter<Part> = { isSold: false };
+    const filter: QueryFilter<Part> = { ...VISIBLE, isSold: false };
     const words = normalizeSearchText(query.q ?? '')
       .split(/\s+/)
       .filter(Boolean);
@@ -312,8 +325,12 @@ export class PartsService {
   /** Cities with parts and the highest price, for the filter sheet. */
   private async facets(): Promise<{ cities: string[]; maxPrice: number }> {
     const [cities, top] = await Promise.all([
-      this.parts.distinct('city', { isSold: false }).exec(),
-      this.parts.findOne({ isSold: false }).sort({ price: -1 }).select('price').exec(),
+      this.parts.distinct('city', { ...VISIBLE, isSold: false }).exec(),
+      this.parts
+        .findOne({ ...VISIBLE, isSold: false })
+        .sort({ price: -1 })
+        .select('price')
+        .exec(),
     ]);
     return { cities: (cities as string[]).sort(), maxPrice: top?.price ?? 0 };
   }

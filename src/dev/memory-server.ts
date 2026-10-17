@@ -19,6 +19,9 @@ async function main() {
     // Development secrets unless .env gives its own.
     JWT_ACCESS_SECRET: 'dev-memory-access-secret-0123456789-abcdef',
     JWT_RESET_SECRET: 'dev-memory-reset-secret-0123456789-abcdefg',
+    ADMIN_JWT_SECRET: 'dev-memory-admin-secret-0123456789-abcdefgh',
+    // The dashboard's dev server (Vite).
+    ADMIN_ORIGINS: 'http://localhost:5173',
     ...process.env,
     NODE_ENV: 'development',
     MONGO_URI: mongo.getUri('arabity-dev'),
@@ -31,6 +34,7 @@ async function main() {
   logger.info('Sample data ready', {
     ...seeded,
     signIn: `seller01@example.com … / ${SAMPLE_PASSWORD}`,
+    dashboard: `admin@example.com / ${SAMPLE_PASSWORD}`,
   });
 
   const server = createApp(container).listen(env.PORT, () => {

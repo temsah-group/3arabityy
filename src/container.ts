@@ -2,6 +2,9 @@ import type { Connection } from 'mongoose';
 
 import type { Env } from './config/env.js';
 import { authenticate, optionalAuthenticate } from './middleware/authenticate.js';
+import { AdminAuthService } from './modules/admin/admin-auth.js';
+import { createAdminModel, createAuditModel } from './modules/admin/admin.model.js';
+import { ModerationService } from './modules/admin/moderation.service.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { OtpService } from './modules/auth/otp.service.js';
 import { createOtpModel } from './modules/auth/otp.model.js';
@@ -42,6 +45,8 @@ export function createContainer(
     Notification: createNotificationModel(connection),
     Device: createDeviceModel(connection),
     Report: createReportModel(connection),
+    Admin: createAdminModel(connection),
+    AuditEntry: createAuditModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -83,6 +88,22 @@ export function createContainer(
     reports,
   ]);
   const requireAuth = authenticate({ tokens, sessions, users });
+  // The dashboard, only when it has a signing key.
+  const adminAuth = env.ADMIN_JWT_SECRET
+    ? new AdminAuthService(models.Admin, {
+        secret: env.ADMIN_JWT_SECRET,
+        hours: env.ADMIN_TOKEN_HOURS,
+      })
+    : null;
+  const moderation = new ModerationService({
+    users: models.User,
+    parts: models.Part,
+    reports: models.Report,
+    audit: models.AuditEntry,
+    partsService: parts,
+    sessions,
+    notifications,
+  });
 
   return {
     connection,
@@ -101,6 +122,8 @@ export function createContainer(
     reports,
     notifications,
     account,
+    adminAuth,
+    moderation,
     requireAuth,
     optionalAuth: optionalAuthenticate(requireAuth),
   };
