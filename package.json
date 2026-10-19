@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev:memory": "tsx watch --env-file-if-exists=.env src/dev/memory-server.ts",
-    "admin:create": "tsx --env-file-if-exists=.env src/scripts/create-admin.ts"
+    "admin:create": "tsx --env-file-if-exists=.env src/scripts/create-admin.ts",
+    "seed:demo": "tsx --env-file-if-exists=.env src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
