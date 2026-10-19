@@ -42,6 +42,11 @@ const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$
 
 const partNotFound = () => new AppError(404, ErrorCode.PART_NOT_FOUND, 'parts.notFound');
 const userNotFound = () => new AppError(404, ErrorCode.USER_NOT_FOUND, 'admin.userNotFound');
+const reviewNotFound = () => new AppError(404, ErrorCode.REVIEW_NOT_FOUND, 'reviews.notFound');
+
+/** What is missing when a report's target is gone. */
+const missingFor = (target: ReportTarget) =>
+  target === 'PART' ? partNotFound : target === 'REVIEW' ? reviewNotFound : userNotFound;
 
 const objectId = (id: string, missing: () => AppError) => {
   if (!Types.ObjectId.isValid(id)) throw missing();
@@ -90,6 +95,17 @@ export class ModerationService {
       partsService: PartsService;
       sessions: SessionsService;
       notifications: NotificationsService;
+      /** Reviews, for reports on them. */
+      reviews?: {
+        authorOf(id: string): Promise<Types.ObjectId | null>;
+        subjects(ids: Types.ObjectId[]): Promise<Map<string, object>>;
+        setHidden(
+          actor: AdminActor,
+          id: string,
+          hidden: boolean,
+          note: string | null,
+        ): Promise<object>;
+      };
       /** Hides or shows the account's shop with its suspension. */
       ownerSuspended?: (userId: string, suspended: boolean) => Promise<void>;
     },
@@ -304,7 +320,7 @@ export class ModerationService {
 
   /** Every report on one part or account, newest first, with who sent it. */
   async reportsOn(target: ReportTarget, id: string) {
-    const targetId = objectId(id, target === 'PART' ? partNotFound : userNotFound);
+    const targetId = objectId(id, missingFor(target));
     const found = await this.deps.reports
       .find({ target, targetId })
       .sort({ createdAt: -1 })
@@ -348,24 +364,32 @@ export class ModerationService {
    * first: hiding or removing the part, or suspending its seller.
    */
   async resolve(actor: AdminActor, target: ReportTarget, id: string, input: Resolution) {
-    const targetId = objectId(id, target === 'PART' ? partNotFound : userNotFound);
+    const targetId = objectId(id, missingFor(target));
     const action: ReportAction = input.action;
     if (action !== 'DISMISS') requireNote(input.note);
-    if ((action === 'HIDE_PART' || action === 'REMOVE_PART') && target !== 'PART') {
+    if (
+      ((action === 'HIDE_PART' || action === 'REMOVE_PART') && target !== 'PART') ||
+      (action === 'HIDE_REVIEW' && target !== 'REVIEW')
+    ) {
       throw badRequest(ErrorCode.VALIDATION_FAILED, 'error.validation');
     }
 
-    if (action === 'HIDE_PART') {
+    if (action === 'HIDE_REVIEW') {
+      await this.deps.reviews?.setHidden(actor, id, true, input.note ?? null);
+    } else if (action === 'HIDE_PART') {
       await this.updatePart(actor, id, { hidden: true, note: input.note });
     } else if (action === 'REMOVE_PART') {
       await this.removePart(actor, id, input.note);
     } else if (action === 'SUSPEND_SELLER') {
+      // For a review, the one who wrote it.
       const sellerId =
         target === 'SELLER'
           ? id
-          : (
-              await this.deps.parts.findById(targetId).select('sellerId').exec()
-            )?.sellerId.toString();
+          : target === 'REVIEW'
+            ? (await this.deps.reviews?.authorOf(id))?.toString()
+            : (
+                await this.deps.parts.findById(targetId).select('sellerId').exec()
+              )?.sellerId.toString();
       if (!sellerId) throw partNotFound();
       const seller = await this.deps.users.findById(sellerId).select('accountStatus').exec();
       if (seller?.accountStatus !== AccountStatus.SUSPENDED) {
@@ -704,14 +728,17 @@ export class ModerationService {
   private async subjects(keys: { target: string; targetId: Types.ObjectId }[]) {
     const partIds = keys.filter((key) => key.target === 'PART').map((key) => key.targetId);
     const userIds = keys.filter((key) => key.target === 'SELLER').map((key) => key.targetId);
-    const [parts, users] = await Promise.all([
+    const reviewIds = keys.filter((key) => key.target === 'REVIEW').map((key) => key.targetId);
+    const [parts, users, reviews] = await Promise.all([
       partIds.length ? this.deps.parts.find({ _id: { $in: partIds } }).exec() : [],
       userIds.length ? this.deps.users.find({ _id: { $in: userIds } }).exec() : [],
+      this.deps.reviews?.subjects(reviewIds) ?? new Map<string, object>(),
     ]);
     const presented = await this.presentParts(parts);
     const map = new Map<string, object>();
     for (const part of presented) map.set(`PART:${part.id}`, part);
     for (const user of users) map.set(`SELLER:${user.id as string}`, presentAccount(user));
+    for (const [id, review] of reviews) map.set(`REVIEW:${id}`, review);
     return map;
   }
 

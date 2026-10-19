@@ -11,6 +11,7 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
 import { partsRoutes, uploadRoutes } from './modules/parts/parts.routes.js';
 import { reportsRoutes } from './modules/reports/reports.js';
+import { reviewsRoutes } from './modules/reviews/reviews.routes.js';
 import { savedRoutes } from './modules/saved/saved.routes.js';
 import { sellersRoutes } from './modules/sellers/sellers.routes.js';
 import { shopsRoutes } from './modules/shops/shops.routes.js';
@@ -42,6 +43,7 @@ export function createApp(container: Container) {
         container.settings,
         container.announcements,
         container.shops,
+        container.reviews,
       ),
     );
   }
@@ -65,6 +67,8 @@ export function createApp(container: Container) {
     '/shops',
     shopsRoutes(container.shops, container.parts, container.requireAuth, container.optionalAuth),
   );
+  // `/shops/:id/reviews`, `/parts/:id/reviews`, `/reviews/…`.
+  api.use(reviewsRoutes(container.reviews, container.requireAuth, container.optionalAuth));
   api.use('/uploads', uploadRoutes(container.parts, container.requireAuth));
   api.use('/sellers', sellersRoutes(container.sellers, container.parts, container.optionalAuth));
   api.use('/notifications', notificationsRoutes(container.notifications, container.requireAuth));

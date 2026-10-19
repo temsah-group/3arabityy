@@ -94,6 +94,8 @@ export class ShopsService {
       audit: AuditModel;
       photos: PhotoStorage;
       notify: (ownerId: Types.ObjectId, change: ShopChange, shop: ShopDocument) => Promise<void>;
+      /** A deleted shop: notifications that open it go. */
+      removed?: (shopId: Types.ObjectId) => Promise<void>;
     },
   ) {}
 
@@ -248,6 +250,7 @@ export class ShopsService {
     const shop = await this.deps.shops.findOne({ ownerId: new Types.ObjectId(userId) }).exec();
     if (!shop) return;
     await shop.deleteOne();
+    await this.deps.removed?.(shop._id);
     await Promise.all([
       this.deps.photos.remove(shop.logoUrl),
       this.deps.photos.remove(shop.coverUrl),

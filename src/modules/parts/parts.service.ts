@@ -31,6 +31,8 @@ export type PartEvents = {
   listed?(part: PartDocument): Promise<void>;
   priceDropped?(part: PartDocument, from: number): Promise<void>;
   removed?(partIds: Types.ObjectId[]): Promise<void>;
+  /** A signed-in buyer called or messaged about the part. */
+  contacted?(userId: string, part: PartDocument): Promise<void>;
 };
 
 type Page = { items: PublicPart[]; nextCursor: string | null; total?: number };
@@ -254,6 +256,7 @@ export class PartsService {
     if (part.sellerId.toString() === viewerId) return;
     const field = channel === 'CALL' ? 'stats.calls' : 'stats.whatsapps';
     await this.parts.updateOne({ _id: part._id }, { $inc: { [field]: 1 } }).exec();
+    if (viewerId) await this.emit(() => this.events.contacted?.(viewerId, part));
   }
 
   /** Takes a part down whoever listed it (moderation); returns what it was. */

@@ -23,6 +23,8 @@ import {
   type AnnouncementsService,
 } from '../announcements/announcements.js';
 import { settingsAdminRoutes, type SettingsService } from '../settings/settings.js';
+import { reviewsAdminRoutes } from '../reviews/reviews.routes.js';
+import type { ReviewsService } from '../reviews/reviews.service.js';
 import { shopsAdminRoutes } from '../shops/shops.routes.js';
 import type { ShopsService } from '../shops/shops.service.js';
 import type { ModerationService } from './moderation.service.js';
@@ -34,6 +36,7 @@ export function adminRoutes(
   settings: SettingsService,
   announcements: AnnouncementsService,
   shops: ShopsService,
+  reviews: ReviewsService,
 ): Router {
   const router = Router();
   const signedIn = requireAdmin(auth);
@@ -125,6 +128,7 @@ export function adminRoutes(
   // ---- Shops: applications, suspensions; featuring and badges are owners' ----
 
   router.use('/shops', shopsAdminRoutes(shops));
+  router.use('/reviews', reviewsAdminRoutes(reviews));
 
   // ---- What the app says about 3arabity (owners) ----
 
@@ -143,7 +147,7 @@ export function adminRoutes(
   return router;
 }
 
-/** `PART` or `SELLER` from the path; anything else is no route. */
+/** `PART`, `SELLER` or `REVIEW` from the path; anything else is no route. */
 function targetOf(value: unknown) {
   const parsed = reportTargetSchema.safeParse(value);
   if (!parsed.success) throw notFound();

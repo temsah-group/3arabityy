@@ -56,6 +56,11 @@ export const ErrorCode = {
   SHOP_NOT_FOUND: 'SHOP_NOT_FOUND',
   SHOP_EXISTS: 'SHOP_EXISTS',
   SHOP_SUSPENDED: 'SHOP_SUSPENDED',
+
+  REVIEW_NOT_FOUND: 'REVIEW_NOT_FOUND',
+  REVIEW_NOT_ALLOWED: 'REVIEW_NOT_ALLOWED',
+  REVIEW_OWN: 'REVIEW_OWN',
+  NOT_REVIEW_SELLER: 'NOT_REVIEW_SELLER',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

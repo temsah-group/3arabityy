@@ -9,7 +9,7 @@ import { limit } from '../../middleware/rate-limit.js';
 import type { PartModel } from '../parts/part.model.js';
 import type { UserModel } from '../users/user.model.js';
 
-export const REPORT_TARGETS = ['PART', 'SELLER'] as const;
+export const REPORT_TARGETS = ['PART', 'SELLER', 'REVIEW'] as const;
 export const REPORT_REASONS = [
   'FAKE',
   'WRONG_INFO',
@@ -22,13 +22,20 @@ export const REPORT_REASONS = [
 ] as const;
 
 /** What a moderator did about a target's reports. */
-export const REPORT_ACTIONS = ['DISMISS', 'HIDE_PART', 'REMOVE_PART', 'SUSPEND_SELLER'] as const;
+export const REPORT_ACTIONS = [
+  'DISMISS',
+  'HIDE_PART',
+  'REMOVE_PART',
+  'HIDE_REVIEW',
+  'SUSPEND_SELLER',
+] as const;
 export type ReportAction = (typeof REPORT_ACTIONS)[number];
 
 /** Which reasons suit which target (the app's `ReportReason.targets`). */
 const REASONS_FOR: Record<(typeof REPORT_TARGETS)[number], readonly string[]> = {
   PART: ['FAKE', 'WRONG_INFO', 'COUNTERFEIT', 'STOLEN', 'SCAM', 'OTHER'],
   SELLER: ['SCAM', 'UNREACHABLE', 'ABUSIVE', 'OTHER'],
+  REVIEW: ['FAKE', 'ABUSIVE', 'OTHER'],
 };
 
 /** A user's report of a part or a seller, for 3arabity to review. */
@@ -96,6 +103,9 @@ export class ReportsService {
     private readonly reports: ReportModel,
     private readonly parts: PartModel,
     private readonly users: UserModel,
+    /** Who wrote a review; null when there is no such review. */
+    private readonly reviewAuthor: (id: string) => Promise<Types.ObjectId | null> = async () =>
+      null,
   ) {}
 
   /** Once per user and target; never the user's own part or self. */
@@ -104,7 +114,9 @@ export class ReportsService {
     const ownerId =
       input.target === 'PART'
         ? (await this.parts.findById(input.targetId).select('sellerId').exec())?.sellerId
-        : (await this.users.findById(input.targetId).select('_id').exec())?._id;
+        : input.target === 'REVIEW'
+          ? await this.reviewAuthor(input.targetId)
+          : (await this.users.findById(input.targetId).select('_id').exec())?._id;
     if (!ownerId) throw this.missing(input.target);
     if (ownerId.toString() === reporterId) {
       throw badRequest(ErrorCode.CANNOT_REPORT_SELF, 'reports.self');
@@ -130,6 +142,9 @@ export class ReportsService {
   }
 
   private missing(target: ReportInput['target']): AppError {
+    if (target === 'REVIEW') {
+      return new AppError(404, ErrorCode.REVIEW_NOT_FOUND, 'reviews.notFound');
+    }
     return target === 'PART'
       ? new AppError(404, ErrorCode.PART_NOT_FOUND, 'parts.notFound')
       : new AppError(404, ErrorCode.SELLER_NOT_FOUND, 'sellers.notFound');

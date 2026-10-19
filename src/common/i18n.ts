@@ -266,6 +266,38 @@ const messages = {
     ar: '"{0}" رجع يظهر للمشترين.',
     en: '"{0}" is shown to buyers again.',
   },
+  'reviews.notFound': { ar: 'التقييم ده مش موجود', en: 'This review does not exist' },
+  'reviews.notAllowed': {
+    ar: 'كلّم البياع الأول (اتصال أو واتساب) عشان تقدر تقيّم',
+    en: 'Call or message the seller first to leave a review',
+  },
+  'reviews.own': { ar: 'مينفعش تقيّم نفسك', en: "You can't review yourself" },
+  'reviews.notSeller': {
+    ar: 'الرد على التقييم للبياع بس',
+    en: 'Only the seller can answer this review',
+  },
+  'reviews.saved': { ar: 'شكراً على تقييمك', en: 'Thanks for your review' },
+  'reviews.deleted': { ar: 'تم حذف تقييمك', en: 'Your review was deleted' },
+  'reviews.replied': { ar: 'تم نشر ردك', en: 'Your answer is posted' },
+  'reviews.replyRemoved': { ar: 'تم حذف ردك', en: 'Your answer was removed' },
+  'validation.rating': { ar: 'اختار من نجمة لـ 5 نجوم', en: 'Choose 1 to 5 stars' },
+  'validation.reviewText': {
+    ar: 'التقييم طويل جداً (500 حرف بالكتير)',
+    en: 'The review is too long (500 characters at most)',
+  },
+  'notifications.newReviewTitle': {
+    ar: 'تقييم جديد {0}★',
+    en: 'New {0}★ review',
+  },
+  'notifications.newReviewBody': {
+    ar: 'حد قيّم "{1}". افتح التقييم ورد عليه.',
+    en: 'Someone reviewed "{1}". Open it to answer.',
+  },
+  'notifications.reviewReplyTitle': { ar: 'البياع رد على تقييمك', en: 'The seller answered you' },
+  'notifications.reviewReplyBody': {
+    ar: 'رد على تقييمك لـ "{1}".',
+    en: 'They answered your review of "{1}".',
+  },
   'sellers.notFound': { ar: 'البائع ده مش موجود', en: 'This seller does not exist' },
   'reports.sent': {
     ar: 'شكراً على البلاغ، هنراجعه',

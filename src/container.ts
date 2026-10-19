@@ -31,6 +31,8 @@ import { createSavedPartModel } from './modules/saved/saved.model.js';
 import { SavedService } from './modules/saved/saved.service.js';
 import { SellersService } from './modules/sellers/sellers.routes.js';
 import { createSettingsModel, SettingsService } from './modules/settings/settings.js';
+import { createContactModel, createReviewModel } from './modules/reviews/review.model.js';
+import { ReviewsService } from './modules/reviews/reviews.service.js';
 import { createShopModel } from './modules/shops/shop.model.js';
 import { ShopsService } from './modules/shops/shops.service.js';
 import { createUserModel } from './modules/users/user.model.js';
@@ -59,6 +61,8 @@ export function createContainer(
     Settings: createSettingsModel(connection),
     Announcement: createAnnouncementModel(connection),
     Shop: createShopModel(connection),
+    Review: createReviewModel(connection),
+    Contact: createContactModel(connection),
   };
 
   const mailer = overrides.mailer ?? createMailer(env);
@@ -91,6 +95,17 @@ export function createContainer(
     audit: models.AuditEntry,
     photos,
     notify: (ownerId, change, shop) => notifications.shopNotice(ownerId, change, shop),
+    removed: (shopId) => notifications.shopRemoved(shopId),
+  });
+  const reviews = new ReviewsService({
+    reviews: models.Review,
+    contacts: models.Contact,
+    parts: models.Part,
+    shops: models.Shop,
+    users: models.User,
+    audit: models.AuditEntry,
+    notify: (userId, event, review, name) =>
+      notifications.reviewNotice(userId, event, review, name),
   });
   // Set once `saved` exists; parts only call it after a request.
   let saved: SavedService | undefined;
@@ -103,14 +118,21 @@ export function createContainer(
       listed: (part) => notifications.partListed(part),
       priceDropped: (part, from) => notifications.priceDropped(part, from),
       removed: async (ids) => {
-        await Promise.all([saved?.partsRemoved(ids), notifications.partsRemoved(ids)]);
+        await Promise.all([
+          saved?.partsRemoved(ids),
+          notifications.partsRemoved(ids),
+          reviews.partsRemoved(ids),
+        ]);
       },
+      contacted: (userId, part) => reviews.contacted(userId, part.sellerId, part._id),
     },
     shops,
   );
   saved = new SavedService(models.SavedPart, models.Part, parts);
   const sellers = new SellersService(models.User, models.Part, (id) => shops.openShopIdOf(id));
-  const reports = new ReportsService(models.Report, models.Part, models.User);
+  const reports = new ReportsService(models.Report, models.Part, models.User, (id) =>
+    reviews.authorOf(id),
+  );
   // Everything else a deleted account leaves behind goes with it.
   const account = new AccountService(
     users,
@@ -118,7 +140,7 @@ export function createContainer(
     sessions,
     models.Otp,
     photos,
-    [parts, saved, notifications, reports, shops],
+    [parts, saved, notifications, reports, shops, reviews],
     (idToken, googleId) => auth.isGoogleAccount(idToken, googleId),
   );
   const settings = new SettingsService(
@@ -151,6 +173,7 @@ export function createContainer(
     partsService: parts,
     sessions,
     notifications,
+    reviews,
     ownerSuspended: (userId, suspended) => shops.ownerSuspended(userId, suspended),
   });
 
@@ -169,6 +192,7 @@ export function createContainer(
     saved,
     sellers,
     shops,
+    reviews,
     reports,
     notifications,
     account,

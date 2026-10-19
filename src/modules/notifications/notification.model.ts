@@ -11,6 +11,7 @@ export const NOTIFICATION_KINDS = [
   'PRICE_DROP',
   'LISTING',
   'SHOP',
+  'REVIEW',
   'SYSTEM',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];

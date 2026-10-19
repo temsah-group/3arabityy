@@ -208,6 +208,26 @@ and `hidden` (the owner's account is suspended).
 }
 ```
 
+Kinds: `FITS_YOUR_CAR`, `PRICE_DROP`, `LISTING`, `SHOP` (the shop was
+approved, rejected, suspended or restored; opens `shopId`), `REVIEW` (a new
+review for the seller, or the seller's answer for its author; opens the part
+or shop), `SYSTEM`. Pushes carry `notificationId`, `kind`, and `partId` or
+`shopId`.
+
+### Review
+
+```json
+{
+  "id": "r_…", "target": "SHOP" | "PART", "targetId": "…",
+  "rating": 4, "text": "محترمين وسريعين" | null,
+  "author": { "name": "منى أ.", "photoUrl": … | null },
+  "reply": { "text": "…", "at": "…" } | null,
+  "mine": false, "createdAt": "…", "updatedAt": "…"
+}
+```
+
+`author.name` is the first name and the initial of the second.
+
 ---
 
 ## 3. Endpoints
@@ -401,6 +421,29 @@ app keeps them on the device and syncs them:
 | GET    | `/users/me/cars` |                            | `{ "items": [{ "brandId", "modelId", "year" }] }` |
 | PUT    | `/users/me/cars` | `{ "items": [...] }` (≤ 5) | same                                              |
 
+### Reviews ✅
+
+| Method | Path                                | Body / query                | Returns                       |
+| ------ | ----------------------------------- | --------------------------- | ----------------------------- |
+| GET    | `/shops/:id/reviews` 👁              | `?cursor&limit`             | page of Review (see below)    |
+| GET    | `/parts/:id/reviews` 👁              | `?cursor&limit`             | page of Review                |
+| PUT    | `/shops\|parts/:id/reviews/mine` 🔒 | `{ rating, text? }`         | Review                        |
+| DELETE | `/shops\|parts/:id/reviews/mine` 🔒 |                             | 200                           |
+| POST   | `/shops/:id/contact` 👁              | `{ channel }`               | 204                           |
+| GET    | `/reviews/received` 🔒              | `?cursor&limit`             | page of Review + `targetName` |
+| PUT    | `/reviews/:id/reply` 🔒             | `{ text }`; null removes it | Review                        |
+
+- The first page also has `summary: { avg, count, breakdown: [1★…5★] }`,
+  `mine` (the viewer's review or null) and `canReview`.
+- Only a buyer who reached the seller may review (`403 REVIEW_NOT_ALLOWED`):
+  a part needs a call or WhatsApp about that part (`POST /parts/:id/contact`
+  with a token); a shop, about any of its parts or from the shop page
+  (`POST /shops/:id/contact`). Never the seller (`400 REVIEW_OWN`).
+- One review per buyer and shop or part; `PUT` again changes it. The seller
+  is told of the first one; the author is told of the seller's first answer.
+- Only the seller answers (`403 NOT_REVIEW_SELLER`).
+- Hidden reviews (by a moderator) are not listed and don't count.
+
 ### Reports ✅ 🔒
 
 | Method | Path       | Body                                                                                   | Returns |
@@ -413,7 +456,8 @@ part-only `FAKE, WRONG_INFO, COUNTERFEIT, STOLEN`; seller-only
 `UNREACHABLE, ABUSIVE`; both `SCAM, OTHER`. A seller's `targetId` is their
 account id (the part's `seller.id`). Reporting one's own part or oneself is
 `400 CANNOT_REPORT_SELF`; an unknown target `404 PART_NOT_FOUND` or
-`SELLER_NOT_FOUND`.
+`SELLER_NOT_FOUND`. A review (`target: "REVIEW"`) takes `FAKE, ABUSIVE,
+OTHER`; its owner is whoever wrote it.
 
 ### Admin dashboard ✅ (`/admin`)
 
@@ -439,7 +483,7 @@ Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
 | GET    | `/admin/stats`                       | `?days=7…365` (30): see below                                                                   | all   |
 | GET    | `/admin/reports`                     | `?status=OPEN\|CLOSED&target=PART\|SELLER`, grouped by target                                   | all   |
 | GET    | `/admin/reports/:target/:id`         | every report on it, with reporters                                                              | all   |
-| POST   | `/admin/reports/:target/:id/resolve` | `{ "action": "DISMISS\|HIDE_PART\|REMOVE_PART\|SUSPEND_SELLER", "note" }`                       | all   |
+| POST   | `/admin/reports/:target/:id/resolve` | `{ "action": "DISMISS\|HIDE_PART\|REMOVE_PART\|HIDE_REVIEW\|SUSPEND_SELLER", "note" }`          | all   |
 | GET    | `/admin/users`                       | `?q=&status=ACTIVE\|SUSPENDED&verified=true\|false`                                             | all   |
 | GET    | `/admin/users/:id`                   | account, counts, cars, history                                                                  | all   |
 | PATCH  | `/admin/users/:id`                   | `{ "status"?, "verified"?, "note" }`; `verified` owners only                                    | all   |
@@ -450,6 +494,8 @@ Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
 | GET    | `/admin/shops`                       | `?status&q&page`; adds `counts` per status                                                      | all   |
 | GET    | `/admin/shops/:id`                   | own Shop, `owner`, `history`                                                                    | all   |
 | PATCH  | `/admin/shops/:id`                   | `{ "status"?, "featured"?, "verified"?, "note" }`; note for reject/suspend                      | all   |
+| GET    | `/admin/reviews`                     | `?hidden&target&sellerId&page`                                                                  | all   |
+| PATCH  | `/admin/reviews/:id`                 | `{ "hidden", "note" }`                                                                          | all   |
 | GET    | `/admin/settings`                    | as `/app-config`                                                                                | owner |
 | PUT    | `/admin/settings/support`            | `{ "email", "phone", "whatsapp" }` (E.164)                                                      | owner |
 | PUT    | `/admin/settings/documents/:name`    | `terms\|privacy\|faq`: `{ "sections": [...] }` (1–50)                                           | owner |
@@ -542,3 +588,7 @@ texts. Cached for five minutes (`Cache-Control`).
 | `SHOP_NOT_FOUND`       | 404    | unknown shop, or one buyers may not see   |
 | `SHOP_EXISTS`          | 409    | applying for a second shop                |
 | `SHOP_SUSPENDED`       | 403    | editing a suspended shop                  |
+| `REVIEW_NOT_FOUND`     | 404    | unknown review                            |
+| `REVIEW_NOT_ALLOWED`   | 403    | reviewing without reaching the seller     |
+| `REVIEW_OWN`           | 400    | reviewing one's own shop or part          |
+| `NOT_REVIEW_SELLER`    | 403    | answering a review of someone else        |

@@ -5,6 +5,8 @@ import { afterCursor, nextCursorOf } from '../../common/http/paging.js';
 import { t, type Lang } from '../../common/i18n.js';
 import { logger } from '../../common/logger.js';
 import type { PartDocument } from '../parts/part.model.js';
+import type { ReviewDocument } from '../reviews/review.model.js';
+import type { ReviewEvent } from '../reviews/reviews.service.js';
 import type { SavedPartModel } from '../saved/saved.model.js';
 import type { User, UserModel } from '../users/user.model.js';
 import type {
@@ -251,10 +253,37 @@ export class NotificationsService {
     this.deliverLater(items);
   }
 
+  /**
+   * A new review for its seller, or the seller's answer for its author. It
+   * opens the shop or part the review is about.
+   */
+  async reviewNotice(
+    userId: Types.ObjectId,
+    event: ReviewEvent,
+    review: ReviewDocument,
+    targetName: string,
+  ): Promise<void> {
+    const items = await this.notifications.insertMany([
+      {
+        userId,
+        kind: 'REVIEW',
+        params: [event, String(review.rating), targetName],
+        partId: review.target === 'PART' ? review.targetId : null,
+        shopId: review.target === 'SHOP' ? review.targetId : null,
+      },
+    ]);
+    this.deliverLater(items);
+  }
+
   /** Deleted parts leave no notifications that open nothing. */
   async partsRemoved(partIds: Types.ObjectId[]): Promise<void> {
     if (partIds.length === 0) return;
     await this.notifications.deleteMany({ partId: { $in: partIds } }).exec();
+  }
+
+  /** A deleted shop leaves no notifications that open nothing. */
+  async shopRemoved(shopId: Types.ObjectId): Promise<void> {
+    await this.notifications.deleteMany({ shopId }).exec();
   }
 
   async deleteAllOf(userId: string): Promise<void> {
@@ -313,6 +342,14 @@ function present(item: NotificationDocument, lang: Lang) {
         return [
           t(lang, `notifications.listing${key}Title`),
           t(lang, `notifications.listing${key}Body`, [name]),
+        ];
+      }
+      case 'REVIEW': {
+        const [event, stars, name] = params;
+        const key = event === 'REPLY' ? 'reviewReply' : 'newReview';
+        return [
+          t(lang, `notifications.${key}Title`, [stars]),
+          t(lang, `notifications.${key}Body`, [stars, name]),
         ];
       }
       case 'SHOP': {

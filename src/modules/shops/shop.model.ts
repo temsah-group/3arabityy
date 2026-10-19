@@ -15,6 +15,12 @@ import { PART_CATEGORIES } from '../catalog/catalog.js';
 export const SHOP_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'] as const;
 export type ShopStatus = (typeof SHOP_STATUSES)[number];
 
+/**
+ * Ranking pulls a shop's average towards [mean] as if it had [weight] more
+ * reviews of it, so two 5-star reviews don't beat a hundred 4.8s.
+ */
+export const RATING_PRIOR = { mean: 4, weight: 5 } as const;
+
 const deliverySchema = new Schema(
   {
     available: { type: Boolean, default: false },
@@ -73,7 +79,7 @@ const shopSchema = new Schema(
     rating: {
       avg: { type: Number, default: 0 },
       count: { type: Number, default: 0 },
-      score: { type: Number, default: 0 },
+      score: { type: Number, default: RATING_PRIOR.mean },
     },
   },
   { timestamps: true, collection: 'shops' },
