@@ -6,7 +6,13 @@ import {
   type Model,
 } from 'mongoose';
 
-export const NOTIFICATION_KINDS = ['FITS_YOUR_CAR', 'PRICE_DROP', 'LISTING', 'SYSTEM'] as const;
+export const NOTIFICATION_KINDS = [
+  'FITS_YOUR_CAR',
+  'PRICE_DROP',
+  'LISTING',
+  'SHOP',
+  'SYSTEM',
+] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 /**
@@ -20,6 +26,8 @@ const notificationSchema = new Schema(
     kind: { type: String, enum: NOTIFICATION_KINDS, required: true },
     params: { type: [String], default: [] },
     partId: { type: Schema.Types.ObjectId, ref: 'Part', default: null },
+    /** The shop it opens, for news about a shop. */
+    shopId: { type: Schema.Types.ObjectId, ref: 'Shop', default: null },
     /** The dashboard announcement it delivers, so removing that removes it. */
     announcementId: { type: Schema.Types.ObjectId, ref: 'Announcement', default: null },
     read: { type: Boolean, default: false },
@@ -30,6 +38,7 @@ const notificationSchema = new Schema(
 notificationSchema.index({ userId: 1, createdAt: -1, _id: -1 });
 notificationSchema.index({ userId: 1, read: 1 });
 notificationSchema.index({ partId: 1 });
+notificationSchema.index({ shopId: 1 }, { sparse: true });
 notificationSchema.index({ announcementId: 1 }, { sparse: true });
 
 export type Notification = InferSchemaType<typeof notificationSchema>;

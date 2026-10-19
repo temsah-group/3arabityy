@@ -44,6 +44,8 @@ export function partsRoutes(
   parts: PartsService,
   requireAuth: RequestHandler,
   optionalAuth: RequestHandler,
+  /** The shops row of the home screen. */
+  homeShops: () => Promise<object[]> = async () => [],
 ): Router {
   const router = Router();
   const viewer = (req: { auth?: { userId: string } }) => req.auth?.userId;
@@ -57,7 +59,11 @@ export function partsRoutes(
   });
 
   router.get('/home', optionalAuth, async (req, res) => {
-    send(res, { data: await parts.home(parseQuery(homeQuerySchema, req), viewer(req)) });
+    const [home, shops] = await Promise.all([
+      parts.home(parseQuery(homeQuerySchema, req), viewer(req)),
+      homeShops(),
+    ]);
+    send(res, { data: { ...home, shops } });
   });
 
   // Never counts a view: the app fills in parts it only knows by id.

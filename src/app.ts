@@ -13,6 +13,7 @@ import { partsRoutes, uploadRoutes } from './modules/parts/parts.routes.js';
 import { reportsRoutes } from './modules/reports/reports.js';
 import { savedRoutes } from './modules/saved/saved.routes.js';
 import { sellersRoutes } from './modules/sellers/sellers.routes.js';
+import { shopsRoutes } from './modules/shops/shops.routes.js';
 import { appConfigRoutes } from './modules/settings/settings.js';
 import { UPLOADS_ROUTE } from './modules/users/photo-storage.js';
 import { usersRoutes } from './modules/users/users.routes.js';
@@ -40,6 +41,7 @@ export function createApp(container: Container) {
         container.moderation,
         container.settings,
         container.announcements,
+        container.shops,
       ),
     );
   }
@@ -53,7 +55,16 @@ export function createApp(container: Container) {
   // Before `/users`, which requires a session for everything under it.
   api.use('/users/me/saved', savedRoutes(container.saved, container.requireAuth));
   api.use('/users', usersRoutes(container.users, container.account, container.requireAuth));
-  api.use('/parts', partsRoutes(container.parts, container.requireAuth, container.optionalAuth));
+  api.use(
+    '/parts',
+    partsRoutes(container.parts, container.requireAuth, container.optionalAuth, () =>
+      container.shops.home(),
+    ),
+  );
+  api.use(
+    '/shops',
+    shopsRoutes(container.shops, container.parts, container.requireAuth, container.optionalAuth),
+  );
   api.use('/uploads', uploadRoutes(container.parts, container.requireAuth));
   api.use('/sellers', sellersRoutes(container.sellers, container.parts, container.optionalAuth));
   api.use('/notifications', notificationsRoutes(container.notifications, container.requireAuth));

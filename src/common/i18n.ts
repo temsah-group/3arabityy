@@ -215,6 +215,57 @@ const messages = {
     ar: '{0}: من {1} لـ {2} جنيه',
     en: '{0}: from EGP {1} to EGP {2}',
   },
+  'shops.notFound': { ar: 'المحل ده مش موجود', en: 'This shop does not exist' },
+  'shops.exists': { ar: 'عندك محل بالفعل', en: 'You already have a shop' },
+  'shops.suspended': {
+    ar: 'محلك موقوف، تواصل مع الدعم',
+    en: 'Your shop is suspended. Contact support',
+  },
+  'shops.applied': {
+    ar: 'وصلنا طلبك، هنراجعه ونبلغك',
+    en: 'We got your application and will let you know',
+  },
+  'shops.saved': { ar: 'تم حفظ بيانات المحل', en: 'Shop details saved' },
+  'validation.shopName': {
+    ar: 'اسم المحل من 3 لـ 60 حرف',
+    en: 'The shop name must be 3 to 60 characters',
+  },
+  'validation.address': {
+    ar: 'اكتب عنوان المحل (من 5 لـ 200 حرف)',
+    en: "Write the shop's address (5 to 200 characters)",
+  },
+  'validation.location': { ar: 'الموقع غير صحيح', en: 'The location is not valid' },
+  'validation.deliveryAreas': {
+    ar: 'اختار المحافظات اللي بتوصّل لها',
+    en: 'Choose the governorates you deliver to',
+  },
+  'validation.deliveryFee': {
+    ar: 'رسوم التوصيل غير صحيحة',
+    en: 'The delivery fee is not valid',
+  },
+  'notifications.shopApprovedTitle': { ar: 'محلك اتقبل 🎉', en: 'Your shop is approved 🎉' },
+  'notifications.shopApprovedBody': {
+    ar: '"{0}" بقى ظاهر للمشترين، وكل قطعك بقت تحته.',
+    en: '"{0}" is now shown to buyers, with all your parts under it.',
+  },
+  'notifications.shopRejectedTitle': {
+    ar: 'طلب المحل محتاج تعديل',
+    en: 'Your shop application needs changes',
+  },
+  'notifications.shopRejectedBody': {
+    ar: '"{0}": {1}. عدّل البيانات وهنراجعه تاني.',
+    en: '"{0}": {1}. Edit it and we will review it again.',
+  },
+  'notifications.shopSuspendedTitle': { ar: 'محلك اتوقف', en: 'Your shop was suspended' },
+  'notifications.shopSuspendedBody': {
+    ar: '"{0}" مش ظاهر للمشترين: {1}. تواصل مع الدعم لو عندك استفسار.',
+    en: '"{0}" is hidden from buyers: {1}. Contact support with any questions.',
+  },
+  'notifications.shopRestoredTitle': { ar: 'محلك رجع يظهر', en: 'Your shop is back' },
+  'notifications.shopRestoredBody': {
+    ar: '"{0}" رجع يظهر للمشترين.',
+    en: '"{0}" is shown to buyers again.',
+  },
   'sellers.notFound': { ar: 'البائع ده مش موجود', en: 'This seller does not exist' },
   'reports.sent': {
     ar: 'شكراً على البلاغ، هنراجعه',

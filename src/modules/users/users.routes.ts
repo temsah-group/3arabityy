@@ -72,7 +72,7 @@ const deleteAccountSchema = z.strictObject({
 });
 
 /** One image in the `photo` field, kept in memory until it is checked. */
-const photoUpload: RequestHandler = (req, res, next) => {
+export const photoUpload: RequestHandler = (req, res, next) => {
   multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: MAX_PHOTO_MB * 1024 * 1024, files: 1, fields: 0 },

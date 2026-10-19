@@ -18,6 +18,13 @@ import {
   type UpdatePartInput,
 } from './parts.schemas.js';
 import type { UploadModel } from './upload.model.js';
+import type { ShopSummary } from '../shops/shops.service.js';
+
+/** What parts need of shops: which one a new part goes under, and how to show it. */
+export type ShopLookup = {
+  approvedShopOf(userId: string): Promise<Types.ObjectId | null>;
+  summaries(ids: Types.ObjectId[]): Promise<Map<string, ShopSummary>>;
+};
 
 /** What other modules do when parts change; failures never fail the request. */
 export type PartEvents = {
@@ -50,6 +57,7 @@ export class PartsService {
     private readonly users: UserModel,
     private readonly photos: PhotoStorage,
     private readonly events: PartEvents = {},
+    private readonly shops?: ShopLookup,
   ) {}
 
   // ---- Reading ----
@@ -173,6 +181,7 @@ export class PartsService {
       ...input,
       oldPrice: input.oldPrice ?? null,
       sellerId: new Types.ObjectId(userId),
+      shopId: (await this.shops?.approvedShopOf(userId)) ?? null,
       listedAt: new Date(),
       searchText: searchableText({ ...input, sellerName: seller?.fullName }),
     });
@@ -413,10 +422,16 @@ export class PartsService {
   /** Presents parts with their sellers, read in one query. */
   private async present(parts: PartDocument[], viewerId?: string): Promise<PublicPart[]> {
     const ids = [...new Set(parts.map((part) => part.sellerId.toString()))];
-    const sellers = await this.users
-      .find({ _id: { $in: ids } })
-      .select('fullName profilePhotoUrl isVerifiedSeller')
-      .exec();
+    const shopIds = [
+      ...new Set(parts.flatMap((part) => (part.shopId ? [part.shopId.toString()] : []))),
+    ].map((id) => new Types.ObjectId(id));
+    const [sellers, shops] = await Promise.all([
+      this.users
+        .find({ _id: { $in: ids } })
+        .select('fullName profilePhotoUrl isVerifiedSeller')
+        .exec(),
+      this.shops?.summaries(shopIds) ?? Promise.resolve(new Map<string, ShopSummary>()),
+    ]);
     const byId = new Map<string, SellerSummary>(
       sellers.map((user) => [
         user.id as string,
@@ -428,7 +443,14 @@ export class PartsService {
         },
       ]),
     );
-    return parts.map((part) => presentPart(part, byId.get(part.sellerId.toString()), viewerId));
+    return parts.map((part) =>
+      presentPart(
+        part,
+        byId.get(part.sellerId.toString()),
+        viewerId,
+        part.shopId ? shops.get(part.shopId.toString()) : undefined,
+      ),
+    );
   }
 }
 

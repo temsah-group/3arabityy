@@ -43,7 +43,15 @@ export type AdminModel = Model<Admin>;
 export const createAdminModel = (connection: Connection): AdminModel =>
   connection.model<Admin>('Admin', adminSchema);
 
-export const AUDIT_TARGETS = ['USER', 'PART', 'REPORT', 'SETTINGS', 'ANNOUNCEMENT'] as const;
+export const AUDIT_TARGETS = [
+  'USER',
+  'PART',
+  'REPORT',
+  'SETTINGS',
+  'ANNOUNCEMENT',
+  'SHOP',
+  'REVIEW',
+] as const;
 
 /** One thing an admin did, kept for good: who, what, to what and why. */
 const auditSchema = new Schema(

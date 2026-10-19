@@ -23,6 +23,8 @@ import {
   type AnnouncementsService,
 } from '../announcements/announcements.js';
 import { settingsAdminRoutes, type SettingsService } from '../settings/settings.js';
+import { shopsAdminRoutes } from '../shops/shops.routes.js';
+import type { ShopsService } from '../shops/shops.service.js';
 import type { ModerationService } from './moderation.service.js';
 
 /** The dashboard's API, under `/api/v1/admin` (see `docs/api-contract.md`). */
@@ -31,6 +33,7 @@ export function adminRoutes(
   moderation: ModerationService,
   settings: SettingsService,
   announcements: AnnouncementsService,
+  shops: ShopsService,
 ): Router {
   const router = Router();
   const signedIn = requireAdmin(auth);
@@ -118,6 +121,10 @@ export function adminRoutes(
     await moderation.removePart(req.admin!, req.params.id as string, note);
     send(res, { message: 'parts.deleted' });
   });
+
+  // ---- Shops: applications, suspensions; featuring and badges are owners' ----
+
+  router.use('/shops', shopsAdminRoutes(shops));
 
   // ---- What the app says about 3arabity (owners) ----
 

@@ -90,6 +90,8 @@ export class ModerationService {
       partsService: PartsService;
       sessions: SessionsService;
       notifications: NotificationsService;
+      /** Hides or shows the account's shop with its suspension. */
+      ownerSuspended?: (userId: string, suspended: boolean) => Promise<void>;
     },
   ) {}
 
@@ -499,6 +501,7 @@ export class ModerationService {
           { $set: { hiddenAt: new Date(), hiddenReason: 'SUSPENDED' } },
         )
         .exec();
+      await this.deps.ownerSuspended?.(id, true);
     } else if (changes.accountStatus === AccountStatus.ACTIVE) {
       await this.deps.parts
         .updateMany(
@@ -506,6 +509,7 @@ export class ModerationService {
           { $set: { hiddenAt: null, hiddenReason: null } },
         )
         .exec();
+      await this.deps.ownerSuspended?.(id, false);
     }
     const action =
       changes.accountStatus === AccountStatus.SUSPENDED

@@ -22,6 +22,8 @@ const fitmentSchema = new Schema(
 const partSchema = new Schema(
   {
     sellerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    /** The seller's shop, once 3arabity approved it; null for individuals. */
+    shopId: { type: Schema.Types.ObjectId, ref: 'Shop', default: null },
     name: { type: String, required: true, trim: true, maxlength: 100 },
     category: { type: String, enum: PART_CATEGORIES, required: true },
     condition: { type: String, enum: PART_CONDITIONS, required: true },
@@ -53,6 +55,11 @@ const partSchema = new Schema(
       calls: { type: Number, default: 0 },
       whatsapps: { type: Number, default: 0 },
     },
+    /** Kept up to date by reviews of this part. */
+    rating: {
+      avg: { type: Number, default: 0 },
+      count: { type: Number, default: 0 },
+    },
     /** Normalised words it is found by; see `searchableText`. */
     searchText: { type: String, default: '', select: false },
   },
@@ -62,6 +69,7 @@ const partSchema = new Schema(
 partSchema.index({ isSold: 1, listedAt: -1, _id: -1 });
 partSchema.index({ isSold: 1, price: 1, _id: 1 });
 partSchema.index({ sellerId: 1, listedAt: -1 });
+partSchema.index({ shopId: 1 }, { sparse: true });
 partSchema.index({ 'fitments.brandId': 1, 'fitments.modelId': 1 });
 
 export type Part = InferSchemaType<typeof partSchema>;

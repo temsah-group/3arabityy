@@ -19,6 +19,9 @@ import type { PushMessage, PushSender } from './push.js';
 /** What happened to a listing; the first param of a `LISTING` notification. */
 export type ListingChange = 'HIDDEN' | 'RESTORED' | 'REMOVED';
 
+/** What a moderator did to a shop; the first param of a `SHOP` notification. */
+export type ShopChange = 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'RESTORED';
+
 export type NotificationSettings = { fitsMyCar: boolean; priceDrops: boolean; news: boolean };
 
 /** How many users one new part may notify; the rest miss out, the app goes on. */
@@ -153,6 +156,7 @@ export class NotificationsService {
           notificationId: shown.id,
           kind: shown.kind,
           ...(shown.partId ? { partId: shown.partId } : {}),
+          ...(shown.shopId ? { shopId: shown.shopId } : {}),
         },
       });
     }
@@ -230,6 +234,23 @@ export class NotificationsService {
     );
   }
 
+  /** Tells an owner what 3arabity decided about their shop, with the reason. */
+  async shopNotice(
+    ownerId: Types.ObjectId,
+    change: ShopChange,
+    shop: { _id: Types.ObjectId; name: string; statusReason?: string | null },
+  ): Promise<void> {
+    const items = await this.notifications.insertMany([
+      {
+        userId: ownerId,
+        kind: 'SHOP',
+        params: [change, shop.name, shop.statusReason ?? ''],
+        shopId: shop._id,
+      },
+    ]);
+    this.deliverLater(items);
+  }
+
   /** Deleted parts leave no notifications that open nothing. */
   async partsRemoved(partIds: Types.ObjectId[]): Promise<void> {
     if (partIds.length === 0) return;
@@ -294,6 +315,21 @@ function present(item: NotificationDocument, lang: Lang) {
           t(lang, `notifications.listing${key}Body`, [name]),
         ];
       }
+      case 'SHOP': {
+        const [change, name, reason] = params;
+        const key =
+          change === 'APPROVED'
+            ? 'Approved'
+            : change === 'REJECTED'
+              ? 'Rejected'
+              : change === 'SUSPENDED'
+                ? 'Suspended'
+                : 'Restored';
+        return [
+          t(lang, `notifications.shop${key}Title`),
+          t(lang, `notifications.shop${key}Body`, [name, reason]),
+        ];
+      }
       // News and announcements carry their own words: Arabic, then English.
       default:
         return lang === 'en' && params.length >= 4
@@ -307,6 +343,7 @@ function present(item: NotificationDocument, lang: Lang) {
     title,
     body,
     partId: item.partId?.toString() ?? null,
+    shopId: item.shopId?.toString() ?? null,
     read: item.read,
     createdAt: item.createdAt,
   };

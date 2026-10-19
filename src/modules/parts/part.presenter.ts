@@ -1,3 +1,4 @@
+import type { ShopSummary } from '../shops/shops.service.js';
 import type { PartDocument } from './part.model.js';
 
 /** What the presenter needs of the seller; filled from the users collection. */
@@ -10,12 +11,13 @@ export type SellerSummary = {
 
 /**
  * The part as the app reads it (`SparePart.fromJson`). `stats` only for the
- * part's own seller.
+ * part's own seller. [shop] is the seller's shop while buyers may see it.
  */
 export function presentPart(
   part: PartDocument,
   seller: SellerSummary | undefined,
   viewerId?: string,
+  shop?: ShopSummary,
 ) {
   const sellerId = part.sellerId.toString();
   return {
@@ -39,6 +41,8 @@ export function presentPart(
     isFeatured: part.isFeatured,
     isSold: part.isSold,
     listedAt: part.listedAt,
+    rating: { avg: part.rating?.avg ?? 0, count: part.rating?.count ?? 0 },
+    shop: shop ?? null,
     seller: {
       id: sellerId,
       name: seller?.fullName ?? '',

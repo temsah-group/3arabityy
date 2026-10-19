@@ -129,6 +129,8 @@ confirms deleting with Google instead.
   "isFeatured": false,
   "isSold": false,
   "listedAt": "…",
+  "rating": { "avg": 4.5, "count": 12 },
+  "shop": ShopSummary | null,
   "seller": {
     "id": "6ad2…",
     "name": "الأمانة لقطع الغيار",
@@ -146,6 +148,8 @@ confirms deleting with Google instead.
 - `stats` is present only for the part's own seller.
 - `seller.phone` is the number the seller listed the part with (it may differ
   from their account phone).
+- `shop` is the seller's shop while it is approved and shown:
+  `{ id, name, logoUrl, verified, rating: { avg, count }, delivers }`.
 
 ### Seller
 
@@ -159,9 +163,39 @@ confirms deleting with Google instead.
   "partsCount": 12,
   "categoriesCount": 3,
   "firstListedAt": "…",
-  "phone": "+201001234501"
+  "phone": "+201001234501",
+  "shopId": "s_…" | null
 }
 ```
+
+`shopId`: the seller's open shop, which the app shows instead.
+
+### Shop
+
+```json
+{
+  "id": "s_…", "ownerId": "6ad2…",
+  "name": "محل النور لقطع الغيار", "description": "…" | null,
+  "logoUrl": "/uploads/shops/<uuid>.jpg" | null, "coverUrl": … | null,
+  "phone": "+20100…", "whatsapp": "+20100…" | null,
+  "city": "القاهرة", "address": "12 شارع التحرير، الدقي",
+  "location": { "lat": 30.04, "lng": 31.21 } | null,
+  "hours": "يومياً ١٠ص - ١٠م" | null,
+  "brandIds": ["toyota"], "categories": ["BRAKES"],
+  "delivery": {
+    "available": true, "governorates": ["القاهرة", "الجيزة"],
+    "feeFrom": 50 | null, "feeTo": 100 | null,
+    "eta": "خلال يومين" | null, "note": … | null
+  },
+  "verified": true, "featured": false,
+  "rating": { "avg": 4.6, "count": 31 },
+  "delivers": true, "partsCount": 42, "createdAt": "…"
+}
+```
+
+The owner's own shop (`/shops/mine`) adds `status` (`PENDING`, `APPROVED`,
+`REJECTED`, `SUSPENDED`), `statusReason` (why it was rejected or suspended)
+and `hidden` (the owner's account is suspended).
 
 ### Notification
 
@@ -169,7 +203,7 @@ confirms deleting with Google instead.
 {
   "id": "n_…", "kind": "FITS_YOUR_CAR",
   "title": "قطعة جديدة تركب على عربيتك",
-  "body": "…", "partId": "p_…" | null,
+  "body": "…", "partId": "p_…" | null, "shopId": "s_…" | null,
   "read": false, "createdAt": "…"
 }
 ```
@@ -289,6 +323,31 @@ Counts and `firstListedAt` cover parts for sale. `city` is where most of them
 are; `phone` is the number on the latest listing (null with no listings), never
 the account's own. Unknown id: `404 SELLER_NOT_FOUND`.
 
+### Shops ✅
+
+| Method | Path                      | Body / query                                         | Returns          |
+| ------ | ------------------------- | ---------------------------------------------------- | ---------------- |
+| GET    | `/shops`                  | `?q&city&deliversTo&brandId&sort=TOP\|NEWEST&cursor` | page of Shop     |
+| GET    | `/shops/:id`              |                                                      | Shop             |
+| GET    | `/shops/:id/parts`        | same query as `/parts`                               | page of Part     |
+| GET    | `/shops/mine` 🔒          |                                                      | own Shop \| null |
+| POST   | `/shops` 🔒               | Shop fields (no ids, counts or flags)                | 201 own Shop     |
+| PATCH  | `/shops/mine` 🔒          | changed fields                                       | own Shop         |
+| POST   | `/shops/mine/logo` 🔒     | multipart `photo` (≤ 5 MB)                           | own Shop         |
+| POST   | `/shops/mine/cover` 🔒    | multipart `photo`                                    | own Shop         |
+| DELETE | `/shops/mine/logo\|cover` |                                                      | own Shop         |
+
+- One shop per account; a second application is `409 SHOP_EXISTS`.
+- A new shop is `PENDING` and buyers see nothing of it until a moderator
+  approves it. Editing a `REJECTED` shop sends it back to `PENDING`; a
+  `SUSPENDED` one cannot be edited (`403 SHOP_SUSPENDED`).
+- Once approved, every part the owner lists (before and after) shows under it.
+- With `delivery.available`, `governorates` needs at least one.
+- `TOP` puts featured shops first, then by rating, weighted so a shop with a
+  couple of reviews doesn't outrank one with many. Shop lists page by
+  position: `nextCursor` is a number as a string.
+- `GET /parts/home` also returns `shops`: up to 10, in `TOP` order.
+
 ### Saved parts ✅ 🔒
 
 | Method | Path                      | Returns                                                            |
@@ -388,6 +447,9 @@ Tables page by offset: `?page=1&pageSize=25` (≤ 100) →
 | GET    | `/admin/parts/:id`                   | part, seller, stats, open reports, history                                                      | all   |
 | PATCH  | `/admin/parts/:id`                   | `{ "hidden"?, "featured"?, "note" }`; `featured` owners only                                    | all   |
 | DELETE | `/admin/parts/:id`                   | `{ "note" }`                                                                                    | all   |
+| GET    | `/admin/shops`                       | `?status&q&page`; adds `counts` per status                                                      | all   |
+| GET    | `/admin/shops/:id`                   | own Shop, `owner`, `history`                                                                    | all   |
+| PATCH  | `/admin/shops/:id`                   | `{ "status"?, "featured"?, "verified"?, "note" }`; note for reject/suspend                      | all   |
 | GET    | `/admin/settings`                    | as `/app-config`                                                                                | owner |
 | PUT    | `/admin/settings/support`            | `{ "email", "phone", "whatsapp" }` (E.164)                                                      | owner |
 | PUT    | `/admin/settings/documents/:name`    | `terms\|privacy\|faq`: `{ "sections": [...] }` (1–50)                                           | owner |
@@ -477,3 +539,6 @@ texts. Cached for five minutes (`Cache-Control`).
 | `GOOGLE_TOKEN_INVALID` | 401    | a Google token that does not check out    |
 | `GOOGLE_SIGN_IN_OFF`   | 503    | `GOOGLE_CLIENT_IDS` is not set            |
 | `USE_GOOGLE`           | 401    | password sign-in to a Google-only account |
+| `SHOP_NOT_FOUND`       | 404    | unknown shop, or one buyers may not see   |
+| `SHOP_EXISTS`          | 409    | applying for a second shop                |
+| `SHOP_SUSPENDED`       | 403    | editing a suspended shop                  |

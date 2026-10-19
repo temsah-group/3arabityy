@@ -19,6 +19,8 @@ export class SellersService {
   constructor(
     private readonly users: UserModel,
     private readonly parts: PartModel,
+    /** The seller's open shop, which the app shows instead. */
+    private readonly shopOf: (userId: string) => Promise<string | null> = async () => null,
   ) {}
 
   async byId(id: string) {
@@ -29,7 +31,7 @@ export class SellersService {
       .exec();
     if (!user) throw sellerNotFound();
     const sellerId = new Types.ObjectId(id);
-    const [forSale, latest] = await Promise.all([
+    const [forSale, latest, shopId] = await Promise.all([
       this.parts
         .find({ sellerId, ...VISIBLE, isSold: false })
         .select('category city listedAt')
@@ -40,6 +42,7 @@ export class SellersService {
         .sort({ listedAt: -1 })
         .select('phone city')
         .exec(),
+      this.shopOf(id),
     ]);
     // Where most of their parts are.
     const cities = new Map<string, number>();
@@ -56,6 +59,7 @@ export class SellersService {
       firstListedAt: forSale.at(-1)?.listedAt ?? null,
       // The number on their latest listing; never the account's own.
       phone: latest?.phone ?? null,
+      shopId,
     };
   }
 }
