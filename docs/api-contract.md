@@ -312,7 +312,7 @@ app knows its saved ids from this list.
 | DELETE | `/notifications/:id`            |                                      | 204                                                        |
 | GET    | `/notifications/settings`       |                                      | `{ "fitsMyCar": true, "priceDrops": true, "news": false }` |
 | PUT    | `/notifications/settings`       | same shape                           | same                                                       |
-| PUT    | `/notifications/devices/:token` | `{ "platform": "ios" \| "android" }` | 204; push token                                            |
+| PUT    | `/notifications/devices/:token` | `{ "platform": "ios" \| "android" }` | 204; push token, in the `Accept-Language` language         |
 | DELETE | `/notifications/devices/:token` |                                      | 204; on sign-out                                           |
 
 `title` and `body` come in the request's language. The server sends:
@@ -325,8 +325,12 @@ app knows its saved ids from this list.
   removed by a moderator; 🔜 renewal reminders after 30 days;
 - `SYSTEM` 🔜 for announcements.
 
-Deleting a part deletes its notifications. Devices are stored; sending push
-waits for Firebase (🔜).
+Deleting a part deletes its notifications. Everything put in an inbox is also
+pushed through Firebase to the user's registered phones, in the language the
+app had when it registered the token (`Accept-Language`), so the app
+registers again after a language change. The push carries
+`data: { notificationId, kind, partId? }` for the tap; Android shows it on the
+`arabity_default` channel. Tokens FCM reports as gone are deleted.
 
 ### Cars (garage) ✅ 🔒
 

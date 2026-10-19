@@ -58,6 +58,9 @@ const schema = z
     MAIL_PASS: z.string().default(''),
     MAIL_FROM: z.string().default('عربيتي <no-reply@3arabity.com>'),
 
+    /** The Firebase service account key file; empty logs pushes instead of sending them. */
+    FIREBASE_SERVICE_ACCOUNT_FILE: z.string().default(''),
+
     /** OAuth client ids whose Google tokens are accepted; empty turns Google sign-in off. */
     GOOGLE_CLIENT_IDS: originList,
   })

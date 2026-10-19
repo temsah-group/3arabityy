@@ -3,6 +3,7 @@ import { Types, type QueryFilter } from 'mongoose';
 import { notFound } from '../../common/http/errors.js';
 import { afterCursor, nextCursorOf } from '../../common/http/paging.js';
 import { t, type Lang } from '../../common/i18n.js';
+import { logger } from '../../common/logger.js';
 import type { PartDocument } from '../parts/part.model.js';
 import type { SavedPartModel } from '../saved/saved.model.js';
 import type { User, UserModel } from '../users/user.model.js';
@@ -13,6 +14,7 @@ import type {
   NotificationKind,
   NotificationModel,
 } from './notification.model.js';
+import type { PushMessage, PushSender } from './push.js';
 
 /** What happened to a listing; the first param of a `LISTING` notification. */
 export type ListingChange = 'HIDDEN' | 'RESTORED' | 'REMOVED';
@@ -26,8 +28,8 @@ const money = (value: number) => new Intl.NumberFormat('en-US').format(value);
 
 /**
  * The inbox, what the user wants in it, and the phones push goes to. Parts
- * call [partListed] and [priceDropped]; sending push itself comes with
- * Firebase.
+ * call [partListed] and [priceDropped]; everything put in an inbox is also
+ * pushed to that user's phones, after the request that caused it.
  */
 export class NotificationsService {
   constructor(
@@ -35,7 +37,11 @@ export class NotificationsService {
     private readonly devices: DeviceModel,
     private readonly users: UserModel,
     private readonly saved: SavedPartModel,
+    private readonly push: PushSender,
   ) {}
+
+  /** Pushes still going out; tests wait on them with [flush]. */
+  private readonly sending = new Set<Promise<void>>();
 
   // ---- The inbox ----
 
@@ -94,14 +100,67 @@ export class NotificationsService {
   }
 
   /** The token now pushes to [userId], whoever had it before. */
-  async registerDevice(userId: string, token: string, platform: 'ios' | 'android') {
+  async registerDevice(userId: string, token: string, platform: 'ios' | 'android', lang: Lang) {
     await this.devices
       .updateOne(
         { token },
-        { $set: { userId: new Types.ObjectId(userId), platform } },
+        { $set: { userId: new Types.ObjectId(userId), platform, lang } },
         { upsert: true },
       )
       .exec();
+  }
+
+  // ---- Push ----
+
+  /**
+   * Pushes [items], just put in their inboxes, to their users' phones without
+   * holding up the caller. A failure is logged; the inbox already has them.
+   */
+  deliverLater(items: NotificationDocument[]): void {
+    if (items.length === 0) return;
+    const job = this.deliver(items)
+      .catch((error: unknown) => {
+        logger.error('Push failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      })
+      .finally(() => this.sending.delete(job));
+    this.sending.add(job);
+  }
+
+  /** Resolves once every push started so far has gone out. */
+  async flush(): Promise<void> {
+    await Promise.all([...this.sending]);
+  }
+
+  private async deliver(items: NotificationDocument[]): Promise<void> {
+    const byUser = new Map(items.map((item) => [item.userId.toString(), item]));
+    const devices = await this.devices
+      .find({ userId: { $in: items.map((item) => item.userId) } })
+      .select('token userId lang')
+      .lean()
+      .exec();
+    const messages: PushMessage[] = [];
+    for (const device of devices) {
+      const item = byUser.get(device.userId.toString());
+      if (!item) continue;
+      const shown = present(item, device.lang === 'en' ? 'en' : 'ar');
+      messages.push({
+        token: device.token,
+        title: shown.title,
+        body: shown.body,
+        data: {
+          notificationId: shown.id,
+          kind: shown.kind,
+          ...(shown.partId ? { partId: shown.partId } : {}),
+        },
+      });
+    }
+    if (messages.length === 0) return;
+    const { deadTokens } = await this.push.send(messages);
+    if (deadTokens.length > 0) {
+      await this.devices.deleteMany({ token: { $in: deadTokens } }).exec();
+    }
   }
 
   async removeDevice(userId: string, token: string): Promise<void> {
@@ -192,9 +251,10 @@ export class NotificationsService {
     partId: Types.ObjectId | null,
   ): Promise<void> {
     if (userIds.length === 0) return;
-    await this.notifications.insertMany(
+    const items = await this.notifications.insertMany(
       userIds.map((userId) => ({ userId, kind, params, partId })),
     );
+    this.deliverLater(items);
   }
 
   private mine(userId: string, id: string): QueryFilter<Notification> {

@@ -54,7 +54,7 @@ export function notificationsRoutes(
 
   router.put('/devices/:token', async (req, res) => {
     const { platform } = parseBody(deviceSchema, req);
-    await notifications.registerDevice(user(req), token(req.params.token), platform);
+    await notifications.registerDevice(user(req), token(req.params.token), platform, req.lang);
     res.status(204).end();
   });
 

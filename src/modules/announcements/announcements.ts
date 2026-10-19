@@ -15,7 +15,10 @@ import { parseBody, parseQuery } from '../../common/http/validate.js';
 import type { AdminActor } from '../admin/admin-auth.js';
 import type { AuditModel } from '../admin/admin.model.js';
 import { pageQuery } from '../admin/admin.schemas.js';
-import type { NotificationModel } from '../notifications/notification.model.js';
+import type {
+  NotificationDocument,
+  NotificationModel,
+} from '../notifications/notification.model.js';
 import type { PartModel } from '../parts/part.model.js';
 import { AccountStatus, type UserModel } from '../users/user.model.js';
 
@@ -101,6 +104,8 @@ export class AnnouncementsService {
       users: UserModel;
       parts: PartModel;
       audit: AuditModel;
+      /** Pushes what was just put in the inboxes. */
+      deliver: (items: NotificationDocument[]) => void;
     },
   ) {}
 
@@ -119,7 +124,7 @@ export class AnnouncementsService {
       let batch: Types.ObjectId[] = [];
       const flush = async () => {
         if (batch.length === 0) return;
-        await notifications.insertMany(
+        const items = await notifications.insertMany(
           batch.map((userId) => ({
             userId,
             kind: 'SYSTEM',
@@ -128,6 +133,7 @@ export class AnnouncementsService {
           })),
           { ordered: false },
         );
+        this.deps.deliver(items);
         recipients += batch.length;
         batch = [];
       };

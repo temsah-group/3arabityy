@@ -45,6 +45,8 @@ const deviceSchema = new Schema(
     token: { type: String, required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     platform: { type: String, enum: ['ios', 'android'], required: true },
+    /** The app's language when it registered; pushes are written in it. */
+    lang: { type: String, enum: ['ar', 'en'], default: 'ar' },
   },
   { timestamps: true, collection: 'devices' },
 );

@@ -11,6 +11,7 @@ import { loadEnv } from '../../src/config/env.js';
 import { createContainer, type Container } from '../../src/container.js';
 import type { GoogleIdentity, GoogleVerifier } from '../../src/modules/auth/google.js';
 import type { Mail, Mailer } from '../../src/modules/mail/mailer.js';
+import type { PushMessage, PushSender } from '../../src/modules/notifications/push.js';
 
 /** Keeps every email so tests can read the codes out of them. */
 export class CapturingMailer implements Mailer {
@@ -44,10 +45,22 @@ export class FakeGoogle implements GoogleVerifier {
   }
 }
 
+/** Keeps every push; tokens in [dead] are reported gone, like an uninstalled app. */
+export class CapturingPush implements PushSender {
+  readonly sent: PushMessage[] = [];
+  readonly dead = new Set<string>();
+
+  async send(messages: PushMessage[]): Promise<{ deadTokens: string[] }> {
+    this.sent.push(...messages);
+    return { deadTokens: messages.map((m) => m.token).filter((token) => this.dead.has(token)) };
+  }
+}
+
 export type TestApp = {
   api: ReturnType<typeof request>;
   mailer: CapturingMailer;
   google: FakeGoogle;
+  push: CapturingPush;
   container: Container;
   reset(): Promise<void>;
   close(): Promise<void>;
@@ -68,7 +81,8 @@ export async function startTestApp(): Promise<TestApp> {
   const connection: Connection = await mongoose.createConnection(env.MONGO_URI).asPromise();
   const mailer = new CapturingMailer();
   const google = new FakeGoogle();
-  const container = createContainer(connection, env, { mailer, google });
+  const push = new CapturingPush();
+  const container = createContainer(connection, env, { mailer, google, push });
   await Promise.all(Object.values(container.models).map((model) => model.syncIndexes()));
   const api = request(createApp(container));
 
@@ -76,9 +90,13 @@ export async function startTestApp(): Promise<TestApp> {
     api,
     mailer,
     google,
+    push,
     container,
     async reset() {
+      await container.notifications.flush();
       mailer.sent.length = 0;
+      push.sent.length = 0;
+      push.dead.clear();
       // Every collection, so each test starts empty.
       await Promise.all(
         Object.values(container.connection.collections).map((collection) =>

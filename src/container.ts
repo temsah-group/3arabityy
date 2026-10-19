@@ -25,6 +25,7 @@ import {
   createNotificationModel,
 } from './modules/notifications/notification.model.js';
 import { NotificationsService } from './modules/notifications/notifications.service.js';
+import { createPushSender, type PushSender } from './modules/notifications/push.js';
 import { createReportModel, ReportsService } from './modules/reports/reports.js';
 import { createSavedPartModel } from './modules/saved/saved.model.js';
 import { SavedService } from './modules/saved/saved.service.js';
@@ -39,7 +40,7 @@ import { UsersService } from './modules/users/users.service.js';
 export function createContainer(
   connection: Connection,
   env: Env,
-  overrides: { mailer?: Mailer; google?: GoogleVerifier } = {},
+  overrides: { mailer?: Mailer; google?: GoogleVerifier; push?: PushSender } = {},
 ) {
   const models = {
     User: createUserModel(connection),
@@ -78,6 +79,7 @@ export function createContainer(
     models.Device,
     models.User,
     models.SavedPart,
+    overrides.push ?? createPushSender(env),
   );
   // Set once `saved` exists; parts only call it after a request.
   let saved: SavedService | undefined;
@@ -113,6 +115,7 @@ export function createContainer(
     users: models.User,
     parts: models.Part,
     audit: models.AuditEntry,
+    deliver: (items) => notifications.deliverLater(items),
   });
   const requireAuth = authenticate({ tokens, sessions, users });
   // The dashboard, only when it has a signing key.
