@@ -282,3 +282,49 @@ describe('phase two', () => {
     expect(await screen.findByText('مينفعش تشيل تويوتا كورولا')).toBeTruthy()
   })
 })
+
+describe('shops', () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      'arabity-admin-session',
+      JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000, admin }),
+    )
+  })
+
+  const shop = {
+    id: 's1', name: 'محل النور', description: null, logoUrl: null, coverUrl: null,
+    phone: '+201001234567', whatsapp: null, city: 'القاهرة', address: 'الدقي', location: null,
+    hours: null, brandIds: ['toyota'], categories: ['BRAKES'],
+    delivery: { available: true, governorates: ['القاهرة', 'الجيزة'], feeFrom: 50, feeTo: 100, eta: null, note: null },
+    verified: false, featured: false, rating: { avg: 0, count: 0 }, partsCount: 3,
+    status: 'PENDING', statusReason: null, hidden: false, createdAt: '2026-10-19T09:00:00Z', approvedAt: null,
+    owner: { id: 'u1', fullName: 'صاحب المحل', email: 'o@x.com', phone: '+201001234567', suspended: false },
+  }
+
+  it('lists new applications and rejects one with a reason the owner sees', async () => {
+    const fetch = serve((url, init) => {
+      if (url.includes('/shops/s1') && init?.method === 'PATCH') return { data: { ...shop, history: [] } }
+      if (url.includes('/shops/s1')) return { data: { ...shop, history: [] } }
+      if (url.includes('/shops')) {
+        return { data: { items: [shop], total: 1, page: 1, pageSize: 25, counts: { PENDING: 1 } } }
+      }
+      return { data: { items: [], total: 0, page: 1, pageSize: 25 } }
+    })
+    const router = open('/shops')
+    expect(await screen.findByText('2 محافظة')).toBeTruthy()
+    expect(screen.getByText('طلب جديد (1)')).toBeTruthy()
+
+    await userEvent.click(screen.getByText('محل النور'))
+    expect(router.state.location.pathname).toBe('/shops/s1')
+    await userEvent.click(await screen.findByRole('button', { name: 'ارفض' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByText('صاحب المحل هيشوف السبب ده في الإشعار وفي التطبيق')).toBeTruthy()
+    await userEvent.type(dialog.getByLabelText('السبب'), 'العنوان ناقص')
+    await userEvent.click(dialog.getByRole('button', { name: 'ارفض الطلب' }))
+
+    await vi.waitFor(() => {
+      const call = fetch.mock.calls.find(([, init]) => init?.method === 'PATCH')
+      expect(JSON.parse(String(call?.[1]?.body))).toEqual({ status: 'REJECTED', note: 'العنوان ناقص' })
+    })
+  })
+})

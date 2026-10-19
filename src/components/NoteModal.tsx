@@ -11,6 +11,8 @@ export type NoteRequest = {
   danger?: boolean
   /** The API refuses most actions without a reason. */
   noteRequired?: boolean
+  /** Under the reason box; by default, that only admins see it. */
+  noteHint?: string
   run(note: string | null): Promise<unknown>
 }
 
@@ -56,7 +58,7 @@ export function NoteModal({
         {request?.description && <Text size="sm">{request.description}</Text>}
         <Textarea
           label={required ? 'السبب' : 'السبب (اختياري)'}
-          description="بيتسجل في سجل العمليات، والمستخدم مش بيشوفه"
+          description={request?.noteHint ?? 'بيتسجل في سجل العمليات، والمستخدم مش بيشوفه'}
           autosize
           minRows={2}
           maxLength={500}

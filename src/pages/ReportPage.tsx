@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { api } from '../api/client'
-import type { Account, PartRow, ReportAction, ReportsOn } from '../api/types'
+import type { Account, PartRow, ReportAction, ReportsOn, ReviewRow } from '../api/types'
 import { NoteModal, type NoteRequest } from '../components/NoteModal'
 import {
   AccountStatusBadge,
@@ -14,7 +14,8 @@ import {
   VerifiedBadge,
 } from '../components/common'
 import { useAfterChange, useApi } from '../hooks'
-import { formatDateTime, formatPrice, label, reasons, reportActions } from '../labels'
+import { formatDateTime, formatPrice, label, reasons, reportActions, stars } from '../labels'
+import { ReviewTarget } from './ReviewsPage'
 
 function PartSubject({ part }: { part: PartRow }) {
   return (
@@ -57,6 +58,30 @@ function AccountSubject({ account }: { account: Account }) {
   )
 }
 
+function ReviewSubject({ review }: { review: ReviewRow }) {
+  return (
+    <Stack gap={4}>
+      <Group gap="xs">
+        <Text c="orange.6">{stars(review.rating)}</Text>
+        {review.hidden && <Badge color="red" variant="light">مخفي</Badge>}
+      </Group>
+      {review.text && <Text>{review.text}</Text>}
+      <Text size="sm" c="dimmed">
+        على <ReviewTarget review={review} /> · كتبه{' '}
+        {review.author ? (
+          <Anchor component={Link} to={`/users/${review.author.id}`} size="sm">
+            {review.author.fullName}
+          </Anchor>
+        ) : (
+          'حساب اتمسح'
+        )}
+      </Text>
+    </Stack>
+  )
+}
+
+const titles = { PART: 'بلاغات على إعلان', SELLER: 'بلاغات على بائع', REVIEW: 'بلاغات على تقييم' }
+
 export function ReportPage() {
   const { target = '', id = '' } = useParams()
   const navigate = useNavigate()
@@ -66,6 +91,7 @@ export function ReportPage() {
   const data = query.data
   const open = data?.reports.filter((report) => report.status === 'OPEN') ?? []
   const isPart = target === 'PART'
+  const isReview = target === 'REVIEW'
 
   const resolve = (action: ReportAction, danger: boolean, description: string) =>
     setRequest({
@@ -93,7 +119,7 @@ export function ReportPage() {
           البلاغات
         </Button>
       </Group>
-      <Title order={2}>{isPart ? 'بلاغات على إعلان' : 'بلاغات على بائع'}</Title>
+      <Title order={2}>{titles[target as keyof typeof titles] ?? titles.SELLER}</Title>
       <QueryState isLoading={query.isLoading} error={query.error} onRetry={() => query.refetch()}>
         {data && (
           <>
@@ -101,11 +127,15 @@ export function ReportPage() {
               {data.subject ? (
                 isPart ? (
                   <PartSubject part={data.subject as PartRow} />
+                ) : isReview ? (
+                  <ReviewSubject review={data.subject as ReviewRow} />
                 ) : (
                   <AccountSubject account={data.subject as Account} />
                 )
               ) : (
-                <Text c="dimmed">{isPart ? 'الإعلان ده اتمسح' : 'الحساب ده اتمسح'}</Text>
+                <Text c="dimmed">
+                  {isPart ? 'الإعلان ده اتمسح' : isReview ? 'التقييم ده اتمسح' : 'الحساب ده اتمسح'}
+                </Text>
               )}
             </Card>
 
@@ -138,6 +168,16 @@ export function ReportPage() {
                     مسح الإعلان
                   </Button>
                 )}
+                {isReview && data.subject && !(data.subject as ReviewRow).hidden && (
+                  <Button
+                    color="orange"
+                    onClick={() =>
+                      resolve('HIDE_REVIEW', false, 'التقييم هيختفي من التطبيق ومش هيتحسب في التقييم.')
+                    }
+                  >
+                    إخفاء التقييم
+                  </Button>
+                )}
                 {data.subject && (
                   <Button
                     color="red"
@@ -145,11 +185,13 @@ export function ReportPage() {
                       resolve(
                         'SUSPEND_SELLER',
                         true,
-                        'البائع هيخرج من كل أجهزته ومش هيقدر يدخل، وكل إعلاناته هتختفي.',
+                        isReview
+                          ? 'كاتب التقييم هيخرج من كل أجهزته ومش هيقدر يدخل.'
+                          : 'البائع هيخرج من كل أجهزته ومش هيقدر يدخل، وكل إعلاناته هتختفي.',
                       )
                     }
                   >
-                    إيقاف البائع
+                    {isReview ? 'إيقاف كاتب التقييم' : 'إيقاف البائع'}
                   </Button>
                 )}
               </Group>

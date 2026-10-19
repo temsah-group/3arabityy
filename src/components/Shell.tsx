@@ -1,4 +1,4 @@
-import { AppShell, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core'
+import { AppShell, Badge, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconCar,
@@ -11,12 +11,16 @@ import {
   IconLogout,
   IconPackage,
   IconSettings,
+  IconStar,
+  IconBuildingStore,
   IconUsers,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router'
 
+import type { ShopsPage } from '../api/types'
 import { useSession } from '../auth/session'
+import { useApi } from '../hooks'
 import { roles } from '../labels'
 
 /** Sends anyone signed out to the sign-in page, then back where they were going. */
@@ -34,6 +38,8 @@ const links = [
   { to: '/reports', label: 'البلاغات', icon: IconFlag },
   { to: '/users', label: 'المستخدمين', icon: IconUsers },
   { to: '/parts', label: 'الإعلانات', icon: IconPackage },
+  { to: '/shops', label: 'المحلات', icon: IconBuildingStore },
+  { to: '/reviews', label: 'التقييمات', icon: IconStar },
   { to: '/stats', label: 'الإحصائيات', icon: IconChartBar },
 ]
 
@@ -41,6 +47,8 @@ export function Shell() {
   const [opened, { toggle, close }] = useDisclosure()
   const { admin, isOwner, signOut } = useSession()
   const { pathname } = useLocation()
+  // New shop applications wait on a moderator; the menu says how many.
+  const pending = useApi<ShopsPage>('/shops', { status: 'PENDING', pageSize: 1 }).data?.counts?.PENDING
   const visible = isOwner
     ? [
         ...links,
@@ -102,6 +110,13 @@ export function Shell() {
               to={link.to}
               label={link.label}
               leftSection={<link.icon size={18} />}
+              rightSection={
+                link.to === '/shops' && pending ? (
+                  <Badge size="sm" color="orange" circle>
+                    {pending}
+                  </Badge>
+                ) : undefined
+              }
               active={active}
               onClick={close}
             />

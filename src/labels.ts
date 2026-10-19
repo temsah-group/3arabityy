@@ -32,6 +32,7 @@ export const reportActions: Record<string, string> = {
   DISMISS: 'تجاهل البلاغ',
   HIDE_PART: 'إخفاء الإعلان',
   REMOVE_PART: 'مسح الإعلان',
+  HIDE_REVIEW: 'إخفاء التقييم',
   SUSPEND_SELLER: 'إيقاف البائع',
 }
 
@@ -53,7 +54,27 @@ export const auditActions: Record<string, string> = {
   ANNOUNCEMENT_SENT: 'رسالة للمستخدمين',
   ANNOUNCEMENT_ENDED: 'شيل بانر من الرئيسية',
   ANNOUNCEMENT_REMOVED: 'مسح رسالة للمستخدمين',
+  SHOP_APPROVED: 'قبول محل',
+  SHOP_REJECTED: 'رفض محل',
+  SHOP_SUSPENDED: 'إيقاف محل',
+  SHOP_RESTORED: 'رجوع محل',
+  SHOP_FEATURED: 'تمييز محل',
+  SHOP_UNFEATURED: 'شيل تمييز محل',
+  SHOP_VERIFIED: 'توثيق محل',
+  SHOP_UNVERIFIED: 'شيل توثيق محل',
+  REVIEW_HIDDEN: 'إخفاء تقييم',
+  REVIEW_SHOWN: 'إظهار تقييم',
 }
+
+export const shopStatuses: Record<string, string> = {
+  PENDING: 'طلب جديد',
+  APPROVED: 'مقبول',
+  REJECTED: 'مرفوض',
+  SUSPENDED: 'موقوف',
+}
+
+/** "★★★★☆" for 4. */
+export const stars = (rating: number) => '★'.repeat(rating) + '☆'.repeat(5 - rating)
 
 export const audiences: Record<string, string> = {
   ALL: 'كل المستخدمين',

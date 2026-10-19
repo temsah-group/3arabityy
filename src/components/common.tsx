@@ -1,9 +1,10 @@
 import { Alert, Avatar, Badge, Button, Center, Group, Loader, Pagination, Text } from '@mantine/core'
-import { IconPhotoOff } from '@tabler/icons-react'
+import { IconBuildingStore, IconPhotoOff } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 
 import { ApiError, mediaUrl } from '../api/client'
-import type { AccountStatus, Page, PartRow } from '../api/types'
+import type { AccountStatus, Page, PartRow, ShopRow } from '../api/types'
+import { label, shopStatuses } from '../labels'
 
 /** Loading, error and empty states around a query's content. */
 export function QueryState({
@@ -102,6 +103,37 @@ export function PartThumb({ part, size = 48 }: { part: Pick<PartRow, 'images'>; 
   return (
     <Avatar src={cover ? mediaUrl(cover) : null} size={size} radius="sm" alt="">
       <IconPhotoOff size={size / 2} />
+    </Avatar>
+  )
+}
+
+const shopColors: Record<string, string> = {
+  PENDING: 'yellow',
+  APPROVED: 'green',
+  REJECTED: 'gray',
+  SUSPENDED: 'red',
+}
+
+/** Where a shop stands; an approved one whose owner is suspended is hidden. */
+export function ShopStatusBadge({ shop }: { shop: Pick<ShopRow, 'status' | 'hidden'> }) {
+  if (shop.status === 'APPROVED' && shop.hidden) {
+    return (
+      <Badge color="red" variant="light">
+        مخفي (صاحبه موقوف)
+      </Badge>
+    )
+  }
+  return (
+    <Badge color={shopColors[shop.status]} variant="light">
+      {label(shopStatuses, shop.status)}
+    </Badge>
+  )
+}
+
+export function ShopLogo({ shop, size = 48 }: { shop: Pick<ShopRow, 'logoUrl'>; size?: number }) {
+  return (
+    <Avatar src={shop.logoUrl ? mediaUrl(shop.logoUrl) : null} size={size} radius="md" alt="">
+      <IconBuildingStore size={size / 2} />
     </Avatar>
   )
 }

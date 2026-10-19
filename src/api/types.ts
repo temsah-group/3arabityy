@@ -32,7 +32,7 @@ export type HistoryEntry = {
   id: string
   adminEmail: string
   action: string
-  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS' | 'ANNOUNCEMENT'
+  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS' | 'ANNOUNCEMENT' | 'SHOP' | 'REVIEW'
   targetId: string
   note: string | null
   changes: Record<string, unknown> | null
@@ -83,8 +83,8 @@ export type PartDetail = PartRow & {
   history: HistoryEntry[]
 }
 
-export type ReportTarget = 'PART' | 'SELLER'
-export type ReportAction = 'DISMISS' | 'HIDE_PART' | 'REMOVE_PART' | 'SUSPEND_SELLER'
+export type ReportTarget = 'PART' | 'SELLER' | 'REVIEW'
+export type ReportAction = 'DISMISS' | 'HIDE_PART' | 'REMOVE_PART' | 'HIDE_REVIEW' | 'SUSPEND_SELLER'
 
 export type ReportGroup = {
   target: ReportTarget
@@ -92,13 +92,13 @@ export type ReportGroup = {
   count: number
   reasons: Record<string, number>
   latestAt: string
-  subject: PartRow | Account | null
+  subject: PartRow | Account | ReviewRow | null
 }
 
 export type ReportsOn = {
   target: ReportTarget
   targetId: string
-  subject: PartRow | Account | null
+  subject: PartRow | Account | ReviewRow | null
   reports: {
     id: string
     reason: string
@@ -174,4 +174,59 @@ export type Stats = {
     calls: number
     whatsapps: number
   }[]
+}
+
+export type ShopStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
+
+export type ShopRow = {
+  id: string
+  name: string
+  description: string | null
+  logoUrl: string | null
+  coverUrl: string | null
+  phone: string
+  whatsapp: string | null
+  city: string
+  address: string
+  location: { lat: number; lng: number } | null
+  hours: string | null
+  brandIds: string[]
+  categories: string[]
+  delivery: {
+    available: boolean
+    governorates: string[]
+    feeFrom: number | null
+    feeTo: number | null
+    eta: string | null
+    note: string | null
+  }
+  verified: boolean
+  featured: boolean
+  rating: { avg: number; count: number }
+  partsCount: number
+  status: ShopStatus
+  statusReason: string | null
+  /** The owner's account is suspended. */
+  hidden: boolean
+  createdAt: string
+  approvedAt: string | null
+  owner: { id: string; fullName: string; email: string; phone: string; suspended: boolean } | null
+}
+
+export type ShopsPage = Page<ShopRow> & { counts: Partial<Record<ShopStatus, number>> }
+
+export type ShopDetail = ShopRow & { history: HistoryEntry[] }
+
+export type ReviewRow = {
+  id: string
+  target: 'SHOP' | 'PART'
+  targetId: string
+  targetName: string | null
+  rating: number
+  text: string | null
+  reply: { text: string; at: string } | null
+  author: { id: string; fullName: string; email: string } | null
+  seller: { id: string; fullName: string; email: string } | null
+  hidden: boolean
+  createdAt: string
 }

@@ -1,16 +1,19 @@
 import { Badge, Group, SegmentedControl, Select, Stack, Table, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router'
 
-import type { Account, Page, PartRow, ReportGroup } from '../api/types'
+import type { Account, Page, PartRow, ReportGroup, ReviewRow } from '../api/types'
 import { PartThumb, Pager, QueryState } from '../components/common'
 import { useApi, useFilters } from '../hooks'
-import { formatDateTime, formatPrice, label, reasons } from '../labels'
+import { formatDateTime, formatPrice, label, reasons, stars } from '../labels'
+
+const targetNames = { PART: 'إعلان', SELLER: 'بائع', REVIEW: 'تقييم' } as const
+const targetColors = { PART: 'navy', SELLER: 'grape', REVIEW: 'orange' } as const
 
 function Subject({ group }: { group: ReportGroup }) {
   if (!group.subject) {
     return (
       <Text c="dimmed" size="sm">
-        {group.target === 'PART' ? 'إعلان اتمسح' : 'حساب اتمسح'}
+        {group.target === 'PART' ? 'إعلان اتمسح' : group.target === 'REVIEW' ? 'تقييم اتمسح' : 'حساب اتمسح'}
       </Text>
     )
   }
@@ -28,6 +31,22 @@ function Subject({ group }: { group: ReportGroup }) {
           </Text>
         </div>
       </Group>
+    )
+  }
+  if (group.target === 'REVIEW') {
+    const review = group.subject as ReviewRow
+    return (
+      <div>
+        <Text size="sm" fw={600} lineClamp={1}>
+          <Text span c="orange.6">
+            {stars(review.rating)}
+          </Text>{' '}
+          {review.text}
+        </Text>
+        <Text size="xs" c="dimmed">
+          على {review.targetName ?? '—'} · {review.author?.fullName ?? '—'}
+        </Text>
+      </div>
     )
   }
   const account = group.subject as Account
@@ -75,6 +94,7 @@ export function ReportsPage() {
           data={[
             { value: 'PART', label: 'إعلانات' },
             { value: 'SELLER', label: 'بائعين' },
+            { value: 'REVIEW', label: 'تقييمات' },
           ]}
         />
       </Group>
@@ -109,8 +129,8 @@ export function ReportsPage() {
                         <Subject group={group} />
                       </Table.Td>
                       <Table.Td>
-                        <Badge variant="light" color={group.target === 'PART' ? 'navy' : 'grape'}>
-                          {group.target === 'PART' ? 'إعلان' : 'بائع'}
+                        <Badge variant="light" color={targetColors[group.target]}>
+                          {targetNames[group.target]}
                         </Badge>
                       </Table.Td>
                       <Table.Td>
