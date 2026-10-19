@@ -17,9 +17,10 @@ const updateProfileSchema = z.strictObject({
   phone: phone.optional(),
 });
 
+// A Google account with no password yet sets its first one without `currentPassword`.
 const changePasswordSchema = z
   .strictObject({
-    currentPassword: z.string('validation.required').min(1, 'validation.required'),
+    currentPassword: z.string('validation.required').min(1, 'validation.required').optional(),
     newPassword: password,
     confirmPassword: z.string('validation.required'),
   })
@@ -64,8 +65,10 @@ const presentCars = (user: { cars?: { brandId: string; modelId: string; year: nu
   })),
 });
 
+/** The password, or for an account without one a fresh Google ID token. */
 const deleteAccountSchema = z.strictObject({
-  password: z.string('validation.required').min(1, 'validation.required'),
+  password: z.string('validation.required').min(1, 'validation.required').optional(),
+  idToken: z.string('validation.required').min(1, 'validation.required').max(4096).optional(),
 });
 
 /** One image in the `photo` field, kept in memory until it is checked. */
@@ -113,8 +116,7 @@ export function usersRoutes(
   });
 
   router.delete('/me', async (req, res) => {
-    const { password: current } = parseBody(deleteAccountSchema, req);
-    await account.deleteAccount(req.auth!.userId, current);
+    await account.deleteAccount(req.auth!.userId, parseBody(deleteAccountSchema, req));
     send(res, { message: 'users.accountDeleted' });
   });
 

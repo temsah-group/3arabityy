@@ -49,6 +49,14 @@ export const loginSchema = z.strictObject({
   rememberMe: z.boolean().optional(),
 });
 
+/** `phone`, and optionally `fullName`, complete a first Google sign-in. */
+export const googleSchema = z.strictObject({
+  idToken: z.string('validation.required').min(1, 'validation.required').max(4096),
+  phone: phone.optional(),
+  fullName: fullName.optional(),
+  rememberMe: z.boolean().optional(),
+});
+
 export const forgotPasswordSchema = z.strictObject({ identifier: email });
 
 export const resendOtpSchema = z.strictObject({ identifier: email, purpose: otpPurpose });
@@ -76,5 +84,6 @@ export const refreshSchema = z.strictObject({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type GoogleInput = z.infer<typeof googleSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

@@ -23,6 +23,42 @@ export class UsersService {
     return this.users.findOne({ email: email.toLowerCase() }).select('+passwordHash').exec();
   }
 
+  findByGoogleId(googleId: string): Promise<UserDocument | null> {
+    return this.users.findOne({ googleId }).exec();
+  }
+
+  /** A confirmed account with no password; Google vouched for the email. */
+  createFromGoogle(input: {
+    fullName: string;
+    email: string;
+    phone: string;
+    googleId: string;
+  }): Promise<UserDocument> {
+    return this.users.create({
+      ...input,
+      passwordHash: null,
+      hasPassword: false,
+      emailVerifiedAt: new Date(),
+    });
+  }
+
+  /** Takes over an unconfirmed sign-up; its password was never proven, so it goes. */
+  claimForGoogle(
+    user: UserDocument,
+    input: { fullName: string; phone: string; googleId: string },
+  ): Promise<UserDocument> {
+    user.set({
+      ...input,
+      passwordHash: null,
+      hasPassword: false,
+      passwordVersion: user.passwordVersion + 1,
+      emailVerifiedAt: new Date(),
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    });
+    return user.save();
+  }
+
   findByEmail(email: string): Promise<UserDocument | null> {
     return this.users.findOne({ email: email.toLowerCase() }).exec();
   }
@@ -49,6 +85,7 @@ export class UsersService {
     user.fullName = input.fullName;
     user.phone = input.phone;
     user.passwordHash = await hashPassword(input.password);
+    user.hasPassword = true;
     user.passwordVersion += 1;
     return user.save();
   }
@@ -60,6 +97,7 @@ export class UsersService {
 
   async setPassword(user: UserDocument, password: string): Promise<UserDocument> {
     user.passwordHash = await hashPassword(password);
+    user.hasPassword = true;
     user.passwordVersion += 1;
     user.failedLoginAttempts = 0;
     user.lockedUntil = null;

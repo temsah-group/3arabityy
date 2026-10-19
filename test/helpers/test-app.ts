@@ -9,6 +9,7 @@ import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { loadEnv } from '../../src/config/env.js';
 import { createContainer, type Container } from '../../src/container.js';
+import type { GoogleIdentity, GoogleVerifier } from '../../src/modules/auth/google.js';
 import type { Mail, Mailer } from '../../src/modules/mail/mailer.js';
 
 /** Keeps every email so tests can read the codes out of them. */
@@ -28,9 +29,25 @@ export class CapturingMailer implements Mailer {
   }
 }
 
+/** Accepts the tokens made by [token]; anything else is rejected like a forgery. */
+export class FakeGoogle implements GoogleVerifier {
+  private readonly issued = new Map<string, GoogleIdentity>();
+
+  token(identity: GoogleIdentity): string {
+    const idToken = `google-token-${this.issued.size + 1}`;
+    this.issued.set(idToken, identity);
+    return idToken;
+  }
+
+  async verify(idToken: string): Promise<GoogleIdentity | null> {
+    return this.issued.get(idToken) ?? null;
+  }
+}
+
 export type TestApp = {
   api: ReturnType<typeof request>;
   mailer: CapturingMailer;
+  google: FakeGoogle;
   container: Container;
   reset(): Promise<void>;
   close(): Promise<void>;
@@ -50,13 +67,15 @@ export async function startTestApp(): Promise<TestApp> {
   });
   const connection: Connection = await mongoose.createConnection(env.MONGO_URI).asPromise();
   const mailer = new CapturingMailer();
-  const container = createContainer(connection, env, { mailer });
+  const google = new FakeGoogle();
+  const container = createContainer(connection, env, { mailer, google });
   await Promise.all(Object.values(container.models).map((model) => model.syncIndexes()));
   const api = request(createApp(container));
 
   return {
     api,
     mailer,
+    google,
     container,
     async reset() {
       mailer.sent.length = 0;

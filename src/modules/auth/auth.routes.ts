@@ -5,6 +5,7 @@ import { parseBody } from '../../common/http/validate.js';
 import { limit } from '../../middleware/rate-limit.js';
 import {
   forgotPasswordSchema,
+  googleSchema,
   loginSchema,
   refreshSchema,
   registerSchema,
@@ -29,6 +30,11 @@ export function authRoutes(auth: AuthService, requireAuth: RequestHandler): Rout
 
   router.post('/login', limit({ max: 10 }), async (req, res) => {
     const result = await auth.login(parseBody(loginSchema, req), deviceOf(req), req.lang);
+    send(res, { message: 'auth.loggedIn', data: result });
+  });
+
+  router.post('/google', limit({ max: 10 }), async (req, res) => {
+    const result = await auth.signInWithGoogle(parseBody(googleSchema, req), deviceOf(req));
     send(res, { message: 'auth.loggedIn', data: result });
   });
 

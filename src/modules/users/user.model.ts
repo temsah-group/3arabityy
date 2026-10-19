@@ -29,7 +29,12 @@ const userSchema = new Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     /** Contact number in E.164 (+201…); not used to sign in. */
     phone: { type: String, required: true },
-    passwordHash: { type: String, required: true, select: false },
+    /** Null for accounts made with Google until the user sets a password. */
+    passwordHash: { type: String, default: null, select: false },
+    /** Mirrors `passwordHash != null`, which is never loaded with the user. */
+    hasPassword: { type: Boolean, default: true },
+    /** Google's account id, once the user signs in with Google. */
+    googleId: { type: String, default: null },
     /** Bumped on every password change; reset tokens carry it, so each works once. */
     passwordVersion: { type: Number, default: 0 },
 
@@ -65,6 +70,10 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.index(
+  { googleId: 1 },
+  { unique: true, partialFilterExpression: { googleId: { $type: 'string' } } },
+);
 userSchema.index({ 'cars.brandId': 1, 'cars.modelId': 1 });
 
 export type User = InferSchemaType<typeof userSchema>;

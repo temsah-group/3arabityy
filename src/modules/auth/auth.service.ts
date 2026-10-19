@@ -1,11 +1,13 @@
 import bcrypt from 'bcrypt';
 
 import {
+  badRequest,
   conflict,
   ErrorCode,
   forbidden,
   tooManyRequests,
   unauthorized,
+  unavailable,
 } from '../../common/http/errors.js';
 import { t, type Lang } from '../../common/i18n.js';
 import { logger } from '../../common/logger.js';
@@ -15,11 +17,13 @@ import { AccountStatus, type UserDocument } from '../users/user.model.js';
 import { presentUser } from '../users/user.presenter.js';
 import type { UsersService } from '../users/users.service.js';
 import type {
+  GoogleInput,
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
   VerifyOtpInput,
 } from './auth.schemas.js';
+import type { GoogleVerifier } from './google.js';
 import { OtpPurpose } from './otp.model.js';
 import type { OtpService } from './otp.service.js';
 import type { SessionsService } from './sessions.service.js';
@@ -39,6 +43,8 @@ export class AuthService {
     private readonly otp: OtpService,
     private readonly mailer: Mailer,
     private readonly env: Pick<Env, 'REFRESH_TOKEN_DAYS' | 'REFRESH_TOKEN_REMEMBER_DAYS'>,
+    /** Null when no Google client ids are configured. */
+    private readonly google: GoogleVerifier | null = null,
   ) {}
 
   /**
@@ -78,6 +84,10 @@ export class AuthService {
       await bcrypt.compare(input.password, DUMMY_HASH);
       throw unauthorized(ErrorCode.INVALID_CREDENTIALS, 'auth.invalidCredentials');
     }
+    if (!user.passwordHash) {
+      await bcrypt.compare(input.password, DUMMY_HASH);
+      throw unauthorized(ErrorCode.USE_GOOGLE, 'auth.useGoogle');
+    }
 
     this.assertNotLocked(user);
     if (!(await bcrypt.compare(input.password, user.passwordHash))) {
@@ -103,10 +113,60 @@ export class AuthService {
       });
     }
     this.assertActive(user);
+    return this.startSession(user, input.rememberMe, device);
+  }
 
-    const days = input.rememberMe
-      ? this.env.REFRESH_TOKEN_REMEMBER_DAYS
-      : this.env.REFRESH_TOKEN_DAYS;
+  /**
+   * Signs in with a Google ID token, linking it to the account with that email.
+   * A first sign-in needs the phone number Google does not give; without it the
+   * answer is `PHONE_REQUIRED` with the name and email to fill the form with.
+   */
+  async signInWithGoogle(input: GoogleInput, device: string) {
+    if (!this.google) throw unavailable(ErrorCode.GOOGLE_SIGN_IN_OFF, 'auth.googleOff');
+    const identity = await this.google.verify(input.idToken);
+    if (!identity) throw unauthorized(ErrorCode.GOOGLE_TOKEN_INVALID, 'auth.googleInvalid');
+
+    let user =
+      (await this.users.findByGoogleId(identity.sub)) ??
+      (await this.users.findByEmail(identity.email));
+    // The email moved to another Google account; keep the one it was linked to.
+    if (user?.googleId && user.googleId !== identity.sub) {
+      throw unauthorized(ErrorCode.GOOGLE_TOKEN_INVALID, 'auth.googleInvalid');
+    }
+
+    if (!user?.emailVerifiedAt) {
+      if (!input.phone) {
+        throw badRequest(ErrorCode.PHONE_REQUIRED, 'auth.phoneRequired', [], {
+          email: identity.email,
+          fullName: identity.name ?? '',
+        });
+      }
+      const details = {
+        fullName: input.fullName ?? (identity.name?.trim() || identity.email.split('@')[0]!),
+        phone: input.phone,
+        googleId: identity.sub,
+      };
+      // An unconfirmed sign-up never proved it owned the email; Google just did.
+      user = user
+        ? await this.users.claimForGoogle(user, details)
+        : await this.users.createFromGoogle({ ...details, email: identity.email });
+    } else if (!user.googleId) {
+      user.googleId = identity.sub;
+      await user.save();
+    }
+
+    this.assertActive(user);
+    return this.startSession(user, input.rememberMe, device);
+  }
+
+  /** Google's word that [idToken] belongs to [googleId]; for confirming risky actions. */
+  async isGoogleAccount(idToken: string, googleId: string): Promise<boolean> {
+    const identity = await this.google?.verify(idToken);
+    return identity?.sub === googleId;
+  }
+
+  private async startSession(user: UserDocument, rememberMe: boolean | undefined, device: string) {
+    const days = rememberMe ? this.env.REFRESH_TOKEN_REMEMBER_DAYS : this.env.REFRESH_TOKEN_DAYS;
     const session = await this.sessions.start(user.id as string, days, device);
     return {
       accessToken: this.tokens.signAccess(session.userId, session.sessionId),

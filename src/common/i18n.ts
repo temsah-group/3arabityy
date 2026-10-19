@@ -78,6 +78,22 @@ const messages = {
     ar: 'تم إيقاف هذا الحساب، تواصل مع الدعم',
     en: 'This account is suspended. Please contact support',
   },
+  'auth.useGoogle': {
+    ar: 'الحساب ده متسجل بجوجل، ادخل بزرار جوجل أو اعمل كلمة مرور من "نسيت كلمة المرور"',
+    en: 'This account signs in with Google. Use the Google button, or set a password with "Forgot password"',
+  },
+  'auth.googleOff': {
+    ar: 'تسجيل الدخول بجوجل مش متاح دلوقتي',
+    en: 'Google sign-in is not available right now',
+  },
+  'auth.googleInvalid': {
+    ar: 'تعذر التأكد من حساب جوجل، جرّب تاني',
+    en: 'We could not confirm your Google account. Please try again',
+  },
+  'auth.phoneRequired': {
+    ar: 'أضف رقم موبايلك عشان المشترين يتواصلوا معاك',
+    en: 'Add your phone number so buyers can reach you',
+  },
   'auth.loggedIn': { ar: 'تم تسجيل الدخول بنجاح', en: 'Signed in' },
   'auth.loggedOut': { ar: 'تم تسجيل الخروج بنجاح', en: 'Signed out' },
   'auth.refreshed': { ar: 'تم تجديد الجلسة', en: 'Session renewed' },

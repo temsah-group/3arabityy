@@ -10,6 +10,7 @@ import {
   createAnnouncementModel,
 } from './modules/announcements/announcements.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { GoogleTokenVerifier, type GoogleVerifier } from './modules/auth/google.js';
 import { OtpService } from './modules/auth/otp.service.js';
 import { createOtpModel } from './modules/auth/otp.model.js';
 import { createRefreshTokenModel } from './modules/auth/session.model.js';
@@ -38,7 +39,7 @@ import { UsersService } from './modules/users/users.service.js';
 export function createContainer(
   connection: Connection,
   env: Env,
-  overrides: { mailer?: Mailer } = {},
+  overrides: { mailer?: Mailer; google?: GoogleVerifier } = {},
 ) {
   const models = {
     User: createUserModel(connection),
@@ -67,7 +68,10 @@ export function createContainer(
     resendSeconds: env.OTP_RESEND_SECONDS,
     maxAttempts: env.OTP_MAX_ATTEMPTS,
   });
-  const auth = new AuthService(users, sessions, tokens, otp, mailer, env);
+  const google =
+    overrides.google ??
+    (env.GOOGLE_CLIENT_IDS.length > 0 ? new GoogleTokenVerifier(env.GOOGLE_CLIENT_IDS) : null);
+  const auth = new AuthService(users, sessions, tokens, otp, mailer, env, google);
   const photos = new PhotoStorage(env.UPLOADS_DIR);
   const notifications = new NotificationsService(
     models.Notification,
@@ -88,12 +92,15 @@ export function createContainer(
   const sellers = new SellersService(models.User, models.Part);
   const reports = new ReportsService(models.Report, models.Part, models.User);
   // Everything else a deleted account leaves behind goes with it.
-  const account = new AccountService(users, models.User, sessions, models.Otp, photos, [
-    parts,
-    saved,
-    notifications,
-    reports,
-  ]);
+  const account = new AccountService(
+    users,
+    models.User,
+    sessions,
+    models.Otp,
+    photos,
+    [parts, saved, notifications, reports],
+    (idToken, googleId) => auth.isGoogleAccount(idToken, googleId),
+  );
   const settings = new SettingsService(
     models.Settings,
     models.AuditEntry,

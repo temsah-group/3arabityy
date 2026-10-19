@@ -20,6 +20,9 @@ export function presentUser(user: UserDocument) {
     },
     // Phone numbers are contact details only until SMS verification exists.
     phoneVerification: { isVerified: false, verifiedAt: null },
+    /** False for a Google account with no password yet: nothing to confirm with. */
+    hasPassword: user.hasPassword !== false,
+    signedInWithGoogle: user.googleId != null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

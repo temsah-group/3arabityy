@@ -94,9 +94,15 @@ list (`GET /vehicles` later serves it, 🔜).
   "primaryIdentifierType": "email",
   "emailVerification": { "isVerified": true, "verifiedAt": "…" },
   "phoneVerification": { "isVerified": false, "verifiedAt": null },
+  "hasPassword": true,
+  "signedInWithGoogle": false,
   "createdAt": "…", "updatedAt": "…"
 }
 ```
+
+`hasPassword` is false for an account made with Google until it sets a
+password; such an account changes its password without the current one and
+confirms deleting with Google instead.
 
 ### Fitment
 
@@ -174,27 +180,28 @@ list (`GET /vehicles` later serves it, 🔜).
 
 ### Auth ✅ (`/auth`)
 
-| Method | Path                    | Body                                                             | Notes                                                                          |
-| ------ | ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| POST   | `/auth/register`        | `fullName, identifier (email), phone, password, confirmPassword` | 201; emails a code                                                             |
-| POST   | `/auth/login`           | `identifier, password, rememberMe?`                              | `{ accessToken, refreshToken, user }`; `403 ACCOUNT_NOT_VERIFIED` sends a code |
-| POST   | `/auth/verify-otp`      | `identifier, otp, purpose: register \| password_reset`           | reset gives `{ resetToken }`                                                   |
-| POST   | `/auth/resend-otp`      | `identifier, purpose`                                            | `429 OTP_RESEND_TOO_SOON` with `retryAfterSeconds`                             |
-| POST   | `/auth/forgot-password` | `identifier`                                                     | same answer for unknown emails                                                 |
-| POST   | `/auth/reset-password`  | `resetToken, newPassword, confirmPassword`                       | signs out everywhere                                                           |
-| POST   | `/auth/refresh`         | `refreshToken`                                                   | rotates; a replayed token ends the session                                     |
-| POST   | `/auth/logout` 🔒       |                                                                  |                                                                                |
+| Method | Path                    | Body                                                             | Notes                                                                                    |
+| ------ | ----------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| POST   | `/auth/register`        | `fullName, identifier (email), phone, password, confirmPassword` | 201; emails a code                                                                       |
+| POST   | `/auth/login`           | `identifier, password, rememberMe?`                              | `{ accessToken, refreshToken, user }`; `403 ACCOUNT_NOT_VERIFIED` sends a code           |
+| POST   | `/auth/google`          | `idToken, phone?, fullName?, rememberMe?`                        | as login; a first sign-in without `phone` is `400 PHONE_REQUIRED` with `email, fullName` |
+| POST   | `/auth/verify-otp`      | `identifier, otp, purpose: register \| password_reset`           | reset gives `{ resetToken }`                                                             |
+| POST   | `/auth/resend-otp`      | `identifier, purpose`                                            | `429 OTP_RESEND_TOO_SOON` with `retryAfterSeconds`                                       |
+| POST   | `/auth/forgot-password` | `identifier`                                                     | same answer for unknown emails                                                           |
+| POST   | `/auth/reset-password`  | `resetToken, newPassword, confirmPassword`                       | signs out everywhere                                                                     |
+| POST   | `/auth/refresh`         | `refreshToken`                                                   | rotates; a replayed token ends the session                                               |
+| POST   | `/auth/logout` 🔒       |                                                                  |                                                                                          |
 
 ### Account ✅ (`/users/me`) 🔒
 
-| Method | Path                 | Body                                            | Returns                                                  |
-| ------ | -------------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| GET    | `/users/me`          |                                                 | User                                                     |
-| PATCH  | `/users/me`          | `fullName?, phone?`                             | User                                                     |
-| PATCH  | `/users/me/password` | `currentPassword, newPassword, confirmPassword` | message; keeps this session, signs out others            |
-| DELETE | `/users/me`          | `password`                                      | message; deletes the account, its parts, sessions, photo |
-| POST   | `/users/me/photo`    | multipart `photo` (JPEG/PNG/WebP ≤ 5 MB)        | User                                                     |
-| DELETE | `/users/me/photo`    |                                                 | User                                                     |
+| Method | Path                 | Body                                             | Returns                                                  |
+| ------ | -------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| GET    | `/users/me`          |                                                  | User                                                     |
+| PATCH  | `/users/me`          | `fullName?, phone?`                              | User                                                     |
+| PATCH  | `/users/me/password` | `currentPassword?, newPassword, confirmPassword` | message; keeps this session, signs out others            |
+| DELETE | `/users/me`          | `password`, or `idToken` without a password      | message; deletes the account, its parts, sessions, photo |
+| POST   | `/users/me/photo`    | multipart `photo` (JPEG/PNG/WebP ≤ 5 MB)         | User                                                     |
+| DELETE | `/users/me/photo`    |                                                  | User                                                     |
 
 Deleting the account must also delete the user's parts and their photos,
 saved parts and reports they made (🔜 once those exist).
@@ -448,17 +455,21 @@ texts. Cached for five minutes (`Cache-Control`).
 
 ## 4. New error codes
 
-| Code                  | Status | When                                    |
-| --------------------- | ------ | --------------------------------------- |
-| `PART_NOT_FOUND`      | 404    | unknown or deleted part                 |
-| `NOT_PART_OWNER`      | 403    | editing someone else's part             |
-| `TOO_MANY_PHOTOS`     | 400    | more than 8 images                      |
-| `UPLOAD_NOT_OWNED`    | 400    | an image path the caller did not upload |
-| `ALREADY_REPORTED`    | 409    | second report of the same target        |
-| `TOO_MANY_CARS`       | 400    | more than 5 cars                        |
-| `SELLER_NOT_FOUND`    | 404    | unknown seller account                  |
-| `CANNOT_REPORT_SELF`  | 400    | reporting one's own part or oneself     |
-| `ADMIN_ROLE_REQUIRED` | 403    | a moderator doing an owner's action     |
-| `NOTE_REQUIRED`       | 400    | an admin action without a reason        |
-| `USER_NOT_FOUND`      | 404    | unknown account, in the dashboard       |
-| `CARS_IN_USE`         | 409    | removing a car parts or users still use |
+| Code                   | Status | When                                      |
+| ---------------------- | ------ | ----------------------------------------- |
+| `PART_NOT_FOUND`       | 404    | unknown or deleted part                   |
+| `NOT_PART_OWNER`       | 403    | editing someone else's part               |
+| `TOO_MANY_PHOTOS`      | 400    | more than 8 images                        |
+| `UPLOAD_NOT_OWNED`     | 400    | an image path the caller did not upload   |
+| `ALREADY_REPORTED`     | 409    | second report of the same target          |
+| `TOO_MANY_CARS`        | 400    | more than 5 cars                          |
+| `SELLER_NOT_FOUND`     | 404    | unknown seller account                    |
+| `CANNOT_REPORT_SELF`   | 400    | reporting one's own part or oneself       |
+| `ADMIN_ROLE_REQUIRED`  | 403    | a moderator doing an owner's action       |
+| `NOTE_REQUIRED`        | 400    | an admin action without a reason          |
+| `USER_NOT_FOUND`       | 404    | unknown account, in the dashboard         |
+| `CARS_IN_USE`          | 409    | removing a car parts or users still use   |
+| `PHONE_REQUIRED`       | 400    | first Google sign-in without a phone      |
+| `GOOGLE_TOKEN_INVALID` | 401    | a Google token that does not check out    |
+| `GOOGLE_SIGN_IN_OFF`   | 503    | `GOOGLE_CLIENT_IDS` is not set            |
+| `USE_GOOGLE`           | 401    | password sign-in to a Google-only account |

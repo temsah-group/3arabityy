@@ -22,6 +22,11 @@ export const ErrorCode = {
   REFRESH_TOKEN_REUSED: 'REFRESH_TOKEN_REUSED',
   RESET_TOKEN_INVALID: 'RESET_TOKEN_INVALID',
 
+  GOOGLE_TOKEN_INVALID: 'GOOGLE_TOKEN_INVALID',
+  GOOGLE_SIGN_IN_OFF: 'GOOGLE_SIGN_IN_OFF',
+  PHONE_REQUIRED: 'PHONE_REQUIRED',
+  USE_GOOGLE: 'USE_GOOGLE',
+
   OTP_NOT_REQUESTED: 'OTP_NOT_REQUESTED',
   OTP_EXPIRED: 'OTP_EXPIRED',
   OTP_ATTEMPTS_EXCEEDED: 'OTP_ATTEMPTS_EXCEEDED',
@@ -59,6 +64,9 @@ export type ErrorDetails = {
   otpSent?: boolean;
   expiresInMinutes?: number;
   retryAfterSeconds?: number;
+  /** What Google told us, so the app can fill in the rest of the sign-up. */
+  email?: string;
+  fullName?: string;
   errors?: { field: string; message: string }[];
 };
 
@@ -96,6 +104,8 @@ export const forbidden = (code: ErrorCode, key: MessageKey, details?: ErrorDetai
 
 export const notFound = (key: MessageKey = 'error.notFound') =>
   new AppError(404, ErrorCode.NOT_FOUND, key);
+
+export const unavailable = (code: ErrorCode, key: MessageKey) => new AppError(503, code, key);
 
 export const conflict = (code: ErrorCode, key: MessageKey) => new AppError(409, code, key);
 

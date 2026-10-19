@@ -20,31 +20,52 @@ export class AccountService {
     private readonly photos: PhotoStorage,
     /** Modules holding what the user made: parts, saved parts, the inbox… */
     private readonly owned: { deleteAllOf(userId: string): Promise<void> }[],
+    /** Whether a Google ID token belongs to the given Google account. */
+    private readonly isGoogleAccount: (idToken: string, googleId: string) => Promise<boolean>,
   ) {}
 
-  /** Keeps this session; every other device has to sign in again. */
+  /**
+   * Keeps this session; every other device has to sign in again. An account
+   * made with Google sets its first password without a current one.
+   */
   async changePassword(
     userId: string,
     sessionId: string,
-    input: { currentPassword: string; newPassword: string },
+    input: { currentPassword?: string | undefined; newPassword: string },
   ): Promise<void> {
     const user = await this.withPassword(userId);
-    // 400, not 401: a wrong password must not look like an expired session.
-    if (!(await bcrypt.compare(input.currentPassword, user.passwordHash))) {
-      throw badRequest(ErrorCode.WRONG_PASSWORD, 'users.wrongPassword');
-    }
-    if (await bcrypt.compare(input.newPassword, user.passwordHash)) {
-      throw badRequest(ErrorCode.VALIDATION_FAILED, 'users.samePassword');
+    if (user.passwordHash) {
+      // 400, not 401: a wrong password must not look like an expired session.
+      if (!(await this.matches(input.currentPassword, user.passwordHash))) {
+        throw badRequest(ErrorCode.WRONG_PASSWORD, 'users.wrongPassword');
+      }
+      if (await bcrypt.compare(input.newPassword, user.passwordHash)) {
+        throw badRequest(ErrorCode.VALIDATION_FAILED, 'users.samePassword');
+      }
     }
     await this.users.setPassword(user, input.newPassword);
     await this.sessions.revokeOthers(userId, sessionId, 'PASSWORD_CHANGED');
   }
 
-  /** Deletes the account, its sessions, its codes and its photo, after the password. */
-  async deleteAccount(userId: string, password: string): Promise<void> {
+  /**
+   * Deletes the account, its sessions, its codes and its photo, after the
+   * password, or for an account without one, after signing in to Google again.
+   */
+  async deleteAccount(
+    userId: string,
+    proof: { password?: string | undefined; idToken?: string | undefined },
+  ): Promise<void> {
     const user = await this.withPassword(userId);
-    if (!(await bcrypt.compare(password, user.passwordHash))) {
-      throw badRequest(ErrorCode.WRONG_PASSWORD, 'users.wrongPassword');
+    const confirmed = user.passwordHash
+      ? await this.matches(proof.password, user.passwordHash)
+      : !!proof.idToken &&
+        !!user.googleId &&
+        (await this.isGoogleAccount(proof.idToken, user.googleId));
+    if (!confirmed) {
+      throw badRequest(
+        user.passwordHash ? ErrorCode.WRONG_PASSWORD : ErrorCode.GOOGLE_TOKEN_INVALID,
+        user.passwordHash ? 'users.wrongPassword' : 'auth.googleInvalid',
+      );
     }
     await Promise.all([
       this.sessions.deleteAll(userId),
@@ -70,6 +91,10 @@ export class AccountService {
     await this.photos.remove(user.profilePhotoUrl);
     user.profilePhotoUrl = null;
     return user.save();
+  }
+
+  private async matches(password: string | undefined, hash: string): Promise<boolean> {
+    return password !== undefined && bcrypt.compare(password, hash);
   }
 
   private async withPassword(userId: string): Promise<UserDocument> {

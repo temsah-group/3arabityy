@@ -57,6 +57,9 @@ const schema = z
     MAIL_USER: z.string().default(''),
     MAIL_PASS: z.string().default(''),
     MAIL_FROM: z.string().default('عربيتي <no-reply@3arabity.com>'),
+
+    /** OAuth client ids whose Google tokens are accepted; empty turns Google sign-in off. */
+    GOOGLE_CLIENT_IDS: originList,
   })
   .superRefine((env, ctx) => {
     if (env.JWT_ACCESS_SECRET === env.JWT_RESET_SECRET) {
