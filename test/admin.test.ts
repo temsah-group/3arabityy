@@ -315,11 +315,8 @@ describe('app settings', () => {
   it('serves the launch texts until an owner edits them', async () => {
     const config = await app.api.get('/api/v1/app-config').expect(200);
     expect(config.headers['cache-control']).toContain('max-age');
-    expect(config.body.data.support).toEqual({
-      email: 'support@3arabity.com',
-      phone: '+201000000000',
-      whatsapp: '+201000000000',
-    });
+    // No made-up contacts: support is the dashboard's to set.
+    expect(config.body.data.support).toBeNull();
     expect(config.body.data.terms.sections.length).toBeGreaterThan(3);
     expect(config.body.data.faq.sections[0].titleAr).toBeTruthy();
 

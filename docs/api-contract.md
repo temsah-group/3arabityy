@@ -545,7 +545,7 @@ whatsapps`, totals since each part went up), `byCategory`, `byCity` and
 
 ```json
 {
-  "support": { "email": "…", "phone": "+20…", "whatsapp": "+20…" },
+  "support": { "email": "…", "phone": "+20…", "whatsapp": "+20…" } | null,
   "terms":   { "sections": [{ "titleAr", "titleEn", "bodyAr", "bodyEn" }], "updatedAt": "…" },
   "privacy": { "sections": [...], "updatedAt": "…" },
   "faq":     { "sections": [...], "updatedAt": "…" },
@@ -556,8 +556,9 @@ whatsapps`, totals since each part went up), `byCategory`, `byCity` and
 ```
 
 FAQ sections are questions (`title…`) and answers (`body…`). `{supportEmail}`
-in any text stands for `support.email`. Never-edited parts are the launch
-texts. Cached for five minutes (`Cache-Control`).
+in any text stands for `support.email`. `support` is null until an owner
+sets it from the dashboard; there are no placeholder contacts. Never-edited
+texts are the launch texts. Cached for five minutes (`Cache-Control`).
 
 ### Health ✅
 

@@ -80,13 +80,6 @@ export type SettingsModel = Model<Settings>;
 export const createSettingsModel = (connection: Connection): SettingsModel =>
   connection.model<Settings>('Settings', settingsSchema);
 
-/** Until the dashboard sets real ones. */
-export const DEFAULT_SUPPORT = {
-  email: 'support@3arabity.com',
-  phone: '+201000000000',
-  whatsapp: '+201000000000',
-};
-
 const text = (max: number) =>
   z
     .string('validation.required')
@@ -196,9 +189,10 @@ export class SettingsService {
     };
     const support = stored?.support;
     return {
+      // Null until an owner sets it; the app then offers no way to reach support.
       support: support
         ? { email: support.email, phone: support.phone, whatsapp: support.whatsapp }
-        : DEFAULT_SUPPORT,
+        : null,
       terms: documentOf('terms'),
       privacy: documentOf('privacy'),
       faq: documentOf('faq'),
