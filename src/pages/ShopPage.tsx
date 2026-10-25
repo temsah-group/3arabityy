@@ -21,6 +21,7 @@ import type { ShopDetail, ShopStatus } from '../api/types'
 import { History } from '../components/History'
 import { NoteModal, type NoteRequest } from '../components/NoteModal'
 import { QueryState, ShopLogo, ShopStatusBadge } from '../components/common'
+import { ShopMap } from '../components/ShopMap'
 import { useSession } from '../auth/session'
 import { useAfterChange, useApi } from '../hooks'
 import { categories, formatDate, formatPrice, label } from '../labels'
@@ -225,17 +226,6 @@ export function ShopPage() {
                   </Detail>
                   <Detail name="واتساب">{shop.whatsapp && <span dir="ltr">{shop.whatsapp}</span>}</Detail>
                   <Detail name="المواعيد">{shop.hours}</Detail>
-                  <Detail name="الموقع">
-                    {shop.location && (
-                      <Anchor
-                        href={`https://maps.google.com/?q=${shop.location.lat},${shop.location.lng}`}
-                        target="_blank"
-                        size="sm"
-                      >
-                        افتح على الخريطة
-                      </Anchor>
-                    )}
-                  </Detail>
                   <Detail name="الأقسام">
                     {shop.categories.map((value) => label(categories, value)).join('، ')}
                   </Detail>
@@ -257,6 +247,7 @@ export function ShopPage() {
                       </>
                     )}
                   </Detail>
+                  <ShopMap location={shop.location} name={shop.name} />
                 </Stack>
               </Card>
               <Card withBorder>

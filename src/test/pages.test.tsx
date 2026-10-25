@@ -345,4 +345,25 @@ describe('shops', () => {
       expect(JSON.parse(String(call?.[1]?.body))).toEqual({ status: 'REJECTED', note: 'العنوان ناقص' })
     })
   })
+
+  it('shows where the shop put itself on the map', async () => {
+    vi.stubEnv('VITE_MAPS_EMBED_KEY', 'embed-key')
+    const pinned = { ...shop, location: { lat: 30.0385, lng: 31.2109 } }
+    serve(() => ({ data: { ...pinned, history: [] } }))
+    open('/shops/s1')
+
+    const map = await screen.findByTitle('مكان محل النور على الخريطة')
+    const src = new URL(map.getAttribute('src')!)
+    expect(src.pathname).toBe('/maps/embed/v1/place')
+    expect(src.searchParams.get('key')).toBe('embed-key')
+    expect(src.searchParams.get('q')).toBe('30.0385,31.2109')
+    expect(screen.getByText('افتح على Google Maps').getAttribute('href')).toContain('query=30.0385,31.2109')
+    vi.unstubAllEnvs()
+  })
+
+  it('says so when the shop has no pin yet', async () => {
+    serve(() => ({ data: { ...shop, history: [] } }))
+    open('/shops/s1')
+    expect(await screen.findByText('المحل لسه محددش مكانه على الخريطة.')).toBeTruthy()
+  })
 })
