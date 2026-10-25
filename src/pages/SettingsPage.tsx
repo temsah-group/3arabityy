@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router'
 
 import { api, ApiError } from '../api/client'
-import type { AppSettings, DocumentName, Section } from '../api/types'
+import type { AppSettings, DocumentName, Section, SupportContact } from '../api/types'
 import { useSession } from '../auth/session'
 import { QueryState } from '../components/common'
 import { useAfterChange, useApi } from '../hooks'
@@ -34,10 +34,13 @@ const errorText = (error: unknown) => (error instanceof ApiError ? error.message
 /** Support's email, call and WhatsApp numbers, as the app shows them. */
 function SupportForm({ settings }: { settings: AppSettings }) {
   const afterChange = useAfterChange()
-  const [form, setForm] = useState(settings.support)
+  const [form, setForm] = useState<SupportContact>(
+    settings.support ?? { email: '', phone: '', whatsapp: '' },
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const changed = JSON.stringify(form) !== JSON.stringify(settings.support)
+  const filled = Boolean(form.email && form.phone && form.whatsapp)
 
   const save = async () => {
     setBusy(true)
@@ -52,7 +55,7 @@ function SupportForm({ settings }: { settings: AppSettings }) {
     }
   }
 
-  const field = (key: keyof AppSettings['support'], label: string, hint?: string) => (
+  const field = (key: keyof SupportContact, label: string, hint?: string) => (
     <TextInput
       label={label}
       description={hint}
@@ -71,6 +74,11 @@ function SupportForm({ settings }: { settings: AppSettings }) {
             بيظهر في صفحة المساعدة، وللحسابات الموقوفة لما تحاول تدخل.
           </Text>
         </div>
+        {!settings.support && (
+          <Alert color="yellow" variant="light">
+            لسه مفيش بيانات دعم، فالتطبيق مش بيعرض أي طريقة للتواصل. اكتبها واحفظ.
+          </Alert>
+        )}
         {field('email', 'البريد الإلكتروني')}
         {field('phone', 'رقم المكالمات', 'بالصيغة الدولية، مثلاً ‎+201001234567')}
         {field('whatsapp', 'رقم الواتساب', 'بالصيغة الدولية، مثلاً ‎+201001234567')}
@@ -80,7 +88,7 @@ function SupportForm({ settings }: { settings: AppSettings }) {
           </Alert>
         )}
         <Group justify="flex-end">
-          <Button onClick={save} loading={busy} disabled={!changed}>
+          <Button onClick={save} loading={busy} disabled={!changed || !filled}>
             حفظ
           </Button>
         </Group>

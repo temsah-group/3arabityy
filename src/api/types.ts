@@ -121,8 +121,11 @@ export type Section = { titleAr: string; titleEn: string; bodyAr: string; bodyEn
 
 export type DocumentName = 'terms' | 'privacy' | 'faq'
 
+export type SupportContact = { email: string; phone: string; whatsapp: string }
+
 export type AppSettings = {
-  support: { email: string; phone: string; whatsapp: string }
+  /** Null until an owner sets it; until then the app shows no way to reach support. */
+  support: SupportContact | null
   terms: { sections: Section[]; updatedAt: string }
   privacy: { sections: Section[]; updatedAt: string }
   faq: { sections: Section[]; updatedAt: string }

@@ -176,6 +176,24 @@ describe('settings', () => {
     const sent = JSON.parse(String(terms[1]?.body)) as { sections: { titleAr: string }[] }
     expect(sent.sections.map((s) => s.titleAr)).toEqual(['عن عربيتي', 'جزء جديد'])
   })
+
+  it('asks for support details until all three are set', async () => {
+    const doc = { sections: [{ titleAr: 'ع', titleEn: 'T', bodyAr: 'نص', bodyEn: 'Text' }], updatedAt: '2026-10-15T00:00:00Z' }
+    const fetch = serve(() => ({ data: { support: null, terms: doc, privacy: doc, faq: doc } }))
+    open('/settings')
+
+    expect(await screen.findByText(/لسه مفيش بيانات دعم/)).toBeTruthy()
+    const save = screen.getAllByRole('button', { name: 'حفظ' })[0]!
+    await userEvent.type(screen.getByLabelText('البريد الإلكتروني'), 'help@3arabity.com')
+    await userEvent.type(screen.getByLabelText('رقم المكالمات'), '+201112223334')
+    expect(save).toHaveProperty('disabled', true)
+    await userEvent.type(screen.getByLabelText('رقم الواتساب'), '+201112223334')
+    expect(save).toHaveProperty('disabled', false)
+    await userEvent.click(save)
+    await vi.waitFor(() =>
+      expect(fetch.mock.calls.some(([url]) => String(url).endsWith('/settings/support'))).toBe(true),
+    )
+  })
 })
 
 describe('phase two', () => {
