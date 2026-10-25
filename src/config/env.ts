@@ -56,7 +56,7 @@ const schema = z
     MAIL_SECURE: booleanString,
     MAIL_USER: z.string().default(''),
     MAIL_PASS: z.string().default(''),
-    MAIL_FROM: z.string().default('عربيتي <no-reply@3arabity.com>'),
+    MAIL_FROM: z.string().default('عربيتي <follow@3rbyty.com>'),
 
     /** The Firebase service account key file; empty logs pushes instead of sending them. */
     FIREBASE_SERVICE_ACCOUNT_FILE: z.string().default(''),

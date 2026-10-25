@@ -411,6 +411,24 @@ const messages = {
     ar: 'رمز التحقق الخاص بك هو {0}\nالرمز صالح لمدة {1} دقائق. لو مش انت اللي طلبته تجاهل الرسالة دي.',
     en: 'Your verification code is {0}\nIt is valid for {1} minutes. If you did not ask for it, ignore this email.',
   },
+  'mail.appName': { ar: 'عربيتي', en: '3arabity' },
+  'mail.codeIntro.register': {
+    ar: 'أهلاً بيك في عربيتي! استخدم الرمز ده عشان تأكد حسابك:',
+    en: 'Welcome to 3arabity! Use this code to confirm your account:',
+  },
+  'mail.codeIntro.password_reset': {
+    ar: 'طلبت تغيير كلمة المرور. استخدم الرمز ده عشان تكمل:',
+    en: 'You asked to reset your password. Use this code to continue:',
+  },
+  'mail.codeValid': { ar: 'الرمز صالح لمدة {0} دقائق.', en: 'The code is valid for {0} minutes.' },
+  'mail.codeIgnore': {
+    ar: 'لو مش انت اللي طلبته، تجاهل الرسالة دي وحسابك في أمان.',
+    en: 'If you did not ask for it, ignore this email; your account is safe.',
+  },
+  'mail.footer': {
+    ar: 'عربيتي — قطع غيار العربيات في مصر',
+    en: '3arabity — car parts in Egypt',
+  },
 } as const satisfies Record<string, Record<Lang, string>>;
 
 export type MessageKey = keyof typeof messages;

@@ -9,10 +9,11 @@ import {
   unauthorized,
   unavailable,
 } from '../../common/http/errors.js';
-import { t, type Lang } from '../../common/i18n.js';
+import type { Lang } from '../../common/i18n.js';
 import { logger } from '../../common/logger.js';
 import type { Env } from '../../config/env.js';
 import type { Mailer } from '../mail/mailer.js';
+import { codeEmail } from '../mail/templates.js';
 import { AccountStatus, type UserDocument } from '../users/user.model.js';
 import { presentUser } from '../users/user.presenter.js';
 import type { UsersService } from '../users/users.service.js';
@@ -252,11 +253,9 @@ export class AuthService {
   private async sendCode(email: string, purpose: OtpPurpose, lang: Lang): Promise<void> {
     const code = await this.otp.issue(email, purpose);
     try {
-      await this.mailer.send({
-        to: email,
-        subject: t(lang, `mail.otpSubject.${purpose}`),
-        text: t(lang, 'mail.otpBody', [code, this.otp.settings.expiresMinutes]),
-      });
+      await this.mailer.send(
+        codeEmail(lang, email, purpose, code, this.otp.settings.expiresMinutes),
+      );
     } catch (error) {
       // The code is stored; the user can ask for it again once mail recovers.
       logger.error('Could not send verification email', {

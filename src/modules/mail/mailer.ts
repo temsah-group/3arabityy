@@ -2,8 +2,13 @@ import nodemailer from 'nodemailer';
 
 import { logger } from '../../common/logger.js';
 import type { Env } from '../../config/env.js';
+import { LOGO_PNG_BASE64 } from './logo.js';
+import { LOGO_CID } from './templates.js';
 
-export type Mail = { to: string; subject: string; text: string };
+/** [html] is optional; mail clients that cannot show it read [text]. */
+export type Mail = { to: string; subject: string; text: string; html?: string };
+
+const logo = Buffer.from(LOGO_PNG_BASE64, 'base64');
 
 export interface Mailer {
   send(mail: Mail): Promise<void>;
@@ -23,7 +28,14 @@ export class SmtpMailer implements Mailer {
   }
 
   async send(mail: Mail): Promise<void> {
-    await this.transport.sendMail({ from: this.env.MAIL_FROM, ...mail });
+    await this.transport.sendMail({
+      from: this.env.MAIL_FROM,
+      ...mail,
+      // The logo travels inside the email, so it shows without a hosted image.
+      attachments: mail.html
+        ? [{ filename: 'logo.png', content: logo, cid: LOGO_CID, contentType: 'image/png' }]
+        : undefined,
+    });
   }
 }
 

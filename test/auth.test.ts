@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { LOGO_CID } from '../src/modules/mail/templates.js';
 import { startTestApp, type TestApp } from './helpers/test-app.js';
 
 const EMAIL = 'mohamed@example.com';
@@ -56,7 +57,13 @@ describe('registration', () => {
       },
     });
     expect(app.mailer.sent).toHaveLength(1);
-    expect(app.mailer.sent[0]?.subject).toContain('عربيتي');
+    const mail = app.mailer.sent[0]!;
+    expect(mail.subject).toContain('عربيتي');
+    // The branded version: the logo on top, the code, right to left in Arabic.
+    const code = app.mailer.lastCode(EMAIL);
+    expect(mail.html).toContain(`src="cid:${LOGO_CID}"`);
+    expect(mail.html).toContain(code);
+    expect(mail.html).toContain('dir="rtl"');
   });
 
   it('answers validation errors in the caller language', async () => {
