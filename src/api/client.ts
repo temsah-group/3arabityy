@@ -67,6 +67,8 @@ export async function api<T>(
   } catch {
     throw new ApiError(0, 'NETWORK', 'مش قادر يوصل للسيرفر، اتأكد إنه شغال')
   }
+  // Done, nothing to say: a delete answers 204 with no body.
+  if (response.status === 204) return undefined as T
   let body: Envelope<T> | null = null
   try {
     body = (await response.json()) as Envelope<T>

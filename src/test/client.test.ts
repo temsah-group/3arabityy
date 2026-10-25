@@ -41,6 +41,12 @@ describe('api', () => {
     expect(signedOut).not.toHaveBeenCalled()
   })
 
+  it('takes an empty 204 as done', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })))
+    setToken('t1')
+    await expect(api('/announcements/a1', { method: 'DELETE' })).resolves.toBeUndefined()
+  })
+
   it('says so when the server cannot be reached', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
     await expect(api('/overview')).rejects.toMatchObject({ status: 0, code: 'NETWORK' })
