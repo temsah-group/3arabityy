@@ -32,7 +32,7 @@ export type HistoryEntry = {
   id: string
   adminEmail: string
   action: string
-  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS' | 'ANNOUNCEMENT' | 'SHOP' | 'REVIEW'
+  target: 'USER' | 'PART' | 'REPORT' | 'SETTINGS' | 'ANNOUNCEMENT' | 'SHOP' | 'REVIEW' | 'OFFER'
   targetId: string
   note: string | null
   changes: Record<string, unknown> | null
@@ -154,6 +154,26 @@ export type Announcement = {
   endedAt: string | null
   recipients: number
   adminEmail: string
+  createdAt: string
+}
+
+/** A slide of the app's home offers. */
+export type Offer = {
+  id: string
+  tagAr: string
+  tagEn: string
+  titleAr: string
+  titleEn: string
+  subtitleAr: string
+  subtitleEn: string
+  /** `/uploads/offers/…` */
+  image: string
+  condition: 'NEW' | 'USED' | 'IMPORTED' | null
+  active: boolean
+  endsAt: string | null
+  /** Shown in the app now: active and not past its end. */
+  live: boolean
+  order: number
   createdAt: string
 }
 

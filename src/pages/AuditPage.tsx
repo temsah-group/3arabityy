@@ -10,6 +10,7 @@ import { auditActions, formatDateTime, label } from '../labels'
 /** Where an entry's target opens. */
 function targetLink(entry: HistoryEntry): string | null {
   if (entry.target === 'SETTINGS') return entry.targetId === 'cars' ? '/cars' : '/settings'
+  if (entry.target === 'OFFER') return entry.action === 'OFFER_REMOVED' ? null : '/offers'
   if (entry.target === 'ANNOUNCEMENT') return entry.action === 'ANNOUNCEMENT_REMOVED' ? null : '/announcements'
   if (entry.target === 'USER') return `/users/${entry.targetId}`
   if (entry.target === 'PART') return entry.action === 'PART_REMOVED' ? null : `/parts/${entry.targetId}`

@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 
 import { RequireSignIn, Shell } from './components/Shell'
 import { AnnouncementsPage } from './pages/AnnouncementsPage'
+import { OffersPage } from './pages/OffersPage'
 import { AuditPage } from './pages/AuditPage'
 import { CarsPage } from './pages/CarsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -39,6 +40,7 @@ export const routes = [
       { path: 'reviews', element: <ReviewsPage /> },
       { path: 'stats', element: <StatsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
+      { path: 'offers', element: <OffersPage /> },
       { path: 'cars', element: <CarsPage /> },
       { path: 'audit', element: <AuditPage /> },
       { path: 'settings', element: <SettingsPage /> },

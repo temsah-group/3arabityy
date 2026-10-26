@@ -59,10 +59,16 @@ export async function api<T>(
       headers: {
         Accept: 'application/json',
         'Accept-Language': 'ar',
-        ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        // A form (a photo) sets its own multipart type.
+        ...(options.body === undefined || options.body instanceof FormData
+          ? {}
+          : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined || options.body instanceof FormData
+          ? (options.body as FormData | undefined)
+          : JSON.stringify(options.body),
     })
   } catch {
     throw new ApiError(0, 'NETWORK', 'مش قادر يوصل للسيرفر، اتأكد إنه شغال')

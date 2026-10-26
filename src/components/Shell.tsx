@@ -4,6 +4,7 @@ import {
   IconCar,
   IconChartBar,
   IconChevronDown,
+  IconPhoto,
   IconSpeakerphone,
   IconFlag,
   IconHistory,
@@ -52,6 +53,7 @@ export function Shell() {
   const visible = isOwner
     ? [
         ...links,
+        { to: '/offers', label: 'عروض الرئيسية', icon: IconPhoto },
         { to: '/announcements', label: 'رسايل للمستخدمين', icon: IconSpeakerphone },
         { to: '/cars', label: 'العربيات', icon: IconCar },
         { to: '/settings', label: 'إعدادات التطبيق', icon: IconSettings },

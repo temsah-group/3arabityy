@@ -367,3 +367,112 @@ describe('shops', () => {
     expect(await screen.findByText('المحل لسه محددش مكانه على الخريطة.')).toBeTruthy()
   })
 })
+
+describe('home offers', () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      'arabity-admin-session',
+      JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000, admin }),
+    )
+  })
+
+  const offer = (id: string, titleAr: string, extra: object = {}) => ({
+    id,
+    tagAr: 'عرض',
+    tagEn: 'Offer',
+    titleAr,
+    titleEn: titleAr,
+    subtitleAr: '',
+    subtitleEn: '',
+    image: `/uploads/offers/${id}.jpg`,
+    condition: null,
+    active: true,
+    endsAt: null,
+    live: true,
+    order: 0,
+    createdAt: '2026-10-01T10:00:00Z',
+    ...extra,
+  })
+
+  it('says the app shows none until one is added', async () => {
+    serve(() => ({ data: { items: [] } }))
+    open('/offers')
+    expect(await screen.findByText(/مفيش عروض/)).toBeTruthy()
+  })
+
+  it('adds a slide with its photo, in both languages', async () => {
+    const fetch = serve((url, init) => {
+      if (url.endsWith('/offers/photo')) return { status: 201, data: { path: '/uploads/offers/new.jpg' } }
+      if (init?.method === 'POST') return { status: 201, data: offer('o9', 'خصم الفرامل') }
+      return { data: { items: [] } }
+    })
+    open('/offers')
+    await userEvent.click(await screen.findByRole('button', { name: 'عرض جديد' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    const save = dialog.getByRole('button', {
+      name: 'احفظ',
+    }) as HTMLButtonElement
+    await userEvent.type(dialog.getByLabelText('الشارة بالعربي'), 'عرض الأسبوع')
+    await userEvent.type(dialog.getByLabelText('الشارة بالإنجليزي'), 'This week')
+    await userEvent.type(dialog.getByLabelText('العنوان بالعربي'), 'خصم الفرامل')
+    await userEvent.type(dialog.getByLabelText('العنوان بالإنجليزي'), 'Brakes on sale')
+    // No photo yet.
+    expect(save.disabled).toBe(true)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await userEvent.upload(
+      input,
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], 'o.jpg', {
+        type: 'image/jpeg',
+      }),
+    )
+    await vi.waitFor(() => expect(save.disabled).toBe(false))
+    const upload = fetch.mock.calls.find(([url]) => String(url).endsWith('/offers/photo'))!
+    expect(upload[1]?.body).toBeInstanceOf(FormData)
+
+    await userEvent.click(save)
+    await vi.waitFor(() =>
+      expect(fetch.mock.calls.some(([, init]) => init?.method === 'POST' && typeof init.body === 'string')).toBe(true),
+    )
+    const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST' && typeof init.body === 'string')!
+    expect(JSON.parse(String(post[1]?.body))).toEqual({
+      tagAr: 'عرض الأسبوع',
+      tagEn: 'This week',
+      titleAr: 'خصم الفرامل',
+      titleEn: 'Brakes on sale',
+      subtitleAr: '',
+      subtitleEn: '',
+      image: '/uploads/offers/new.jpg',
+      condition: null,
+      active: true,
+      endsAt: null,
+    })
+  })
+
+  it('moves a slide up, and says which are paused or over', async () => {
+    const fetch = serve(() => ({
+      data: {
+        items: [
+          offer('o1', 'الأول'),
+          offer('o2', 'التاني', { active: false, live: false }),
+          offer('o3', 'التالت', {
+            endsAt: '2026-01-01T00:00:00Z',
+            live: false,
+          }),
+        ],
+      },
+    }))
+    open('/offers')
+    const second = within(await screen.findByTestId('offer-o2'))
+    expect(second.getByText('متوقف')).toBeTruthy()
+    expect(within(screen.getByTestId('offer-o3')).getByText('خلص')).toBeTruthy()
+    expect(within(screen.getByTestId('offer-o1')).getByText('ظاهر')).toBeTruthy()
+
+    await userEvent.click(second.getByRole('button', { name: 'لفوق' }))
+    await vi.waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(true))
+    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')!
+    expect(String(put[0])).toContain('/admin/offers/order')
+    expect(JSON.parse(String(put[1]?.body))).toEqual({
+      ids: ['o2', 'o1', 'o3'],
+    })
+  })
+})
