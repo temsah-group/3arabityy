@@ -31,7 +31,7 @@ export function photoExtension(bytes: Buffer): 'jpg' | 'png' | 'webp' | null {
 }
 
 /** Folders under UPLOADS_DIR, one per kind of photo. */
-export type PhotoFolder = 'avatars' | 'parts' | 'shops';
+export type PhotoFolder = 'avatars' | 'parts' | 'shops' | 'offers';
 
 /**
  * Photos on the server's disk, for development and a single server.
@@ -56,7 +56,7 @@ export class PhotoStorage {
   /** Removes a photo saved here; anything else (an outside URL) is left alone. */
   async remove(publicPath: string | null | undefined): Promise<void> {
     const match = publicPath?.match(
-      /^\/uploads\/(avatars|parts|shops)\/([\w-]+\.(?:jpg|png|webp))$/,
+      /^\/uploads\/(avatars|parts|shops|offers)\/([\w-]+\.(?:jpg|png|webp))$/,
     );
     if (!match) return;
     try {

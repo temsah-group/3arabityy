@@ -30,6 +30,7 @@ import { createReportModel, ReportsService } from './modules/reports/reports.js'
 import { createSavedPartModel } from './modules/saved/saved.model.js';
 import { SavedService } from './modules/saved/saved.service.js';
 import { SellersService } from './modules/sellers/sellers.routes.js';
+import { createOfferModel, OffersService } from './modules/offers/offers.js';
 import { createSettingsModel, SettingsService } from './modules/settings/settings.js';
 import { createContactModel, createReviewModel } from './modules/reviews/review.model.js';
 import { ReviewsService } from './modules/reviews/reviews.service.js';
@@ -60,6 +61,7 @@ export function createContainer(
     AuditEntry: createAuditModel(connection),
     Settings: createSettingsModel(connection),
     Announcement: createAnnouncementModel(connection),
+    Offer: createOfferModel(connection),
     Shop: createShopModel(connection),
     Review: createReviewModel(connection),
     Contact: createContactModel(connection),
@@ -157,6 +159,11 @@ export function createContainer(
     audit: models.AuditEntry,
     deliver: (items) => notifications.deliverLater(items),
   });
+  const offers = new OffersService({
+    offers: models.Offer,
+    audit: models.AuditEntry,
+    photos,
+  });
   const requireAuth = authenticate({ tokens, sessions, users });
   // The dashboard, only when it has a signing key.
   const adminAuth = env.ADMIN_JWT_SECRET
@@ -200,6 +207,7 @@ export function createContainer(
     moderation,
     settings,
     announcements,
+    offers,
     requireAuth,
     optionalAuth: optionalAuthenticate(requireAuth),
   };

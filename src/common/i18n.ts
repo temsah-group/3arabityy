@@ -397,6 +397,7 @@ const messages = {
     ar: 'الإعلان ده مش موجود',
     en: 'This announcement does not exist',
   },
+  'admin.offerNotFound': { ar: 'العرض ده مش موجود', en: 'This offer does not exist' },
   'admin.announcementSent': { ar: 'اتبعت الإعلان', en: 'Announcement sent' },
 
   'mail.otpSubject.register': {

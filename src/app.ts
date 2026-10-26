@@ -44,6 +44,7 @@ export function createApp(container: Container) {
         container.announcements,
         container.shops,
         container.reviews,
+        container.offers,
       ),
     );
   }
@@ -75,7 +76,11 @@ export function createApp(container: Container) {
   api.use('/reports', reportsRoutes(container.reports, container.requireAuth));
   api.use(
     '/app-config',
-    appConfigRoutes(container.settings, () => container.announcements.banner()),
+    appConfigRoutes(
+      container.settings,
+      () => container.announcements.banner(),
+      () => container.offers.live(),
+    ),
   );
   app.use(API_PREFIX, api);
 

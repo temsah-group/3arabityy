@@ -51,6 +51,7 @@ export const AUDIT_TARGETS = [
   'ANNOUNCEMENT',
   'SHOP',
   'REVIEW',
+  'OFFER',
 ] as const;
 
 /** One thing an admin did, kept for good: who, what, to what and why. */

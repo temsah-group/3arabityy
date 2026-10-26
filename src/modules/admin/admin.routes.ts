@@ -22,6 +22,7 @@ import {
   announcementsAdminRoutes,
   type AnnouncementsService,
 } from '../announcements/announcements.js';
+import { offersAdminRoutes, type OffersService } from '../offers/offers.js';
 import { settingsAdminRoutes, type SettingsService } from '../settings/settings.js';
 import { reviewsAdminRoutes } from '../reviews/reviews.routes.js';
 import type { ReviewsService } from '../reviews/reviews.service.js';
@@ -37,6 +38,7 @@ export function adminRoutes(
   announcements: AnnouncementsService,
   shops: ShopsService,
   reviews: ReviewsService,
+  offers: OffersService,
 ): Router {
   const router = Router();
   const signedIn = requireAdmin(auth);
@@ -137,6 +139,10 @@ export function adminRoutes(
   // ---- Messages to every user (owners) ----
 
   router.use('/announcements', announcementsAdminRoutes(announcements, owner));
+
+  // ---- The home screen's offers (owners) ----
+
+  router.use('/offers', offersAdminRoutes(offers, owner));
 
   // ---- The log (owners) ----
 

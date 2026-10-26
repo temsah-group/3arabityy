@@ -281,18 +281,24 @@ export class SettingsService {
 
 /**
  * `GET /app-config`: public, read by the app on launch. With [banner], the
- * announcement shown on the home screen, if one is up.
+ * announcement shown on the home screen, if one is up; with [offers], the
+ * home screen's slides.
  */
 export function appConfigRoutes(
   settings: SettingsService,
   banner: () => Promise<object | null>,
+  offers: () => Promise<object[]> = async () => [],
 ): Router {
   const router = Router();
   router.get('/', async (_req, res) => {
     // A few minutes stale is fine; it changes rarely.
     res.setHeader('Cache-Control', 'public, max-age=300');
-    const [current, announcement] = await Promise.all([settings.current(), banner()]);
-    send(res, { data: { ...current, announcement } });
+    const [current, announcement, slides] = await Promise.all([
+      settings.current(),
+      banner(),
+      offers(),
+    ]);
+    send(res, { data: { ...current, announcement, offers: slides } });
   });
   return router;
 }

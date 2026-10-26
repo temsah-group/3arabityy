@@ -610,3 +610,90 @@ describe('cars', () => {
       .expect(400);
   });
 });
+
+describe('offers', () => {
+  const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46]);
+  const slide = {
+    tagAr: 'عرض الأسبوع',
+    tagEn: 'This week',
+    titleAr: 'خصم على الفرامل',
+    titleEn: 'Brakes on sale',
+  };
+  const config = async () =>
+    (await app.api.get('/api/v1/app-config').expect(200)).body.data.offers as {
+      id: string;
+      titleEn: string;
+      image: string;
+      condition: string | null;
+    }[];
+  const photo = async (token: string) =>
+    (
+      await app.api
+        .post(`${ADMIN}/offers/photo`)
+        .set(auth(token))
+        .attach('photo', JPEG, 'o.jpg')
+        .expect(201)
+    ).body.data.path as string;
+
+  it('none until the dashboard adds them; then the live ones, in order', async () => {
+    expect(await config()).toEqual([]);
+    const moderator = await admin('MODERATOR');
+    const owner = await admin('OWNER');
+    await app.api.get(`${ADMIN}/offers`).set(auth(moderator)).expect(403);
+
+    // Only a photo uploaded here.
+    await app.api
+      .post(`${ADMIN}/offers`)
+      .set(auth(owner))
+      .send({ ...slide, image: 'https://example.com/a.jpg' })
+      .expect(400);
+    const image = await photo(owner);
+    expect(image).toMatch(/^\/uploads\/offers\//);
+
+    const brakes = await app.api
+      .post(`${ADMIN}/offers`)
+      .set(auth(owner))
+      .send({ ...slide, image, condition: 'NEW' })
+      .expect(201);
+    const second = await photo(owner);
+    const imported = await app.api
+      .post(`${ADMIN}/offers`)
+      .set(auth(owner))
+      .send({ ...slide, titleEn: 'Imported', image: second })
+      .expect(201);
+    // Newest first.
+    expect((await config()).map((o) => o.titleEn)).toEqual(['Imported', 'Brakes on sale']);
+    expect((await config())[1]).toMatchObject({ image, condition: 'NEW' });
+
+    await app.api
+      .put(`${ADMIN}/offers/order`)
+      .set(auth(owner))
+      .send({ ids: [brakes.body.data.id, imported.body.data.id] })
+      .expect(200);
+    expect((await config()).map((o) => o.titleEn)).toEqual(['Brakes on sale', 'Imported']);
+
+    // Paused, or past its end: off the app, still in the dashboard.
+    await app.api
+      .patch(`${ADMIN}/offers/${brakes.body.data.id}`)
+      .set(auth(owner))
+      .send({ active: false })
+      .expect(200);
+    await app.api
+      .patch(`${ADMIN}/offers/${imported.body.data.id}`)
+      .set(auth(owner))
+      .send({ endsAt: new Date(Date.now() - 1000).toISOString() })
+      .expect(200);
+    expect(await config()).toEqual([]);
+    const list = await app.api.get(`${ADMIN}/offers`).set(auth(owner)).expect(200);
+    expect(list.body.data.items.map((o: { live: boolean }) => o.live)).toEqual([false, false]);
+
+    await app.api.delete(`${ADMIN}/offers/${brakes.body.data.id}`).set(auth(owner)).expect(204);
+    await app.api.delete(`${ADMIN}/offers/${brakes.body.data.id}`).set(auth(owner)).expect(404);
+    const log = await app.api.get(`${ADMIN}/audit`).set(auth(owner)).expect(200);
+    expect(log.body.data.items.map((e: { action: string }) => e.action).slice(0, 3)).toEqual([
+      'OFFER_REMOVED',
+      'OFFER_UPDATED',
+      'OFFER_UPDATED',
+    ]);
+  });
+});
