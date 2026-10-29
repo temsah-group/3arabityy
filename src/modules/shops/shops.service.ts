@@ -145,6 +145,14 @@ export class ShopsService {
     return (await this.presentMany([shop]))[0]!;
   }
 
+  /** The open shops among [ids], in that order; others are left out. */
+  async openByIds(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return [];
+    const found = await this.deps.shops.find({ _id: { $in: ids }, ...OPEN_SHOP }).exec();
+    const byId = new Map(found.map((shop) => [shop.id as string, shop]));
+    return this.presentMany(ids.flatMap((id) => byId.get(id.toString()) ?? []));
+  }
+
   /** The owner of an open shop, for its parts list. */
   async openOwner(id: string): Promise<string> {
     const shop = await this.find(id);

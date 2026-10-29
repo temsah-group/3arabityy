@@ -12,6 +12,7 @@ import { notificationsRoutes } from './modules/notifications/notifications.route
 import { partsRoutes, uploadRoutes } from './modules/parts/parts.routes.js';
 import { reportsRoutes } from './modules/reports/reports.js';
 import { reviewsRoutes } from './modules/reviews/reviews.routes.js';
+import { savedShopsRoutes } from './modules/saved/saved-shops.js';
 import { savedRoutes } from './modules/saved/saved.routes.js';
 import { sellersRoutes } from './modules/sellers/sellers.routes.js';
 import { shopsRoutes } from './modules/shops/shops.routes.js';
@@ -57,6 +58,7 @@ export function createApp(container: Container) {
   api.use('/auth', authRoutes(container.auth, container.requireAuth));
   // Before `/users`, which requires a session for everything under it.
   api.use('/users/me/saved', savedRoutes(container.saved, container.requireAuth));
+  api.use('/users/me/saved-shops', savedShopsRoutes(container.savedShops, container.requireAuth));
   api.use('/users', usersRoutes(container.users, container.account, container.requireAuth));
   api.use(
     '/parts',

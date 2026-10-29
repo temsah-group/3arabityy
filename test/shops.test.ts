@@ -206,3 +206,50 @@ describe('moderating shops', () => {
     expect(await app.container.models.Shop.findById(shop.id)).toBeNull();
   });
 });
+
+describe('saved shops', () => {
+  const saved = async (token: string) => {
+    const res = await app.api.get('/api/v1/users/me/saved-shops').set(auth(token)).expect(200);
+    return (res.body.data.items as { id: string }[]).map((shop) => shop.id);
+  };
+
+  it('saves open shops, newest first, on every device; closed ones drop out', async () => {
+    const admin = await adminToken(app);
+    const ownerA = await signUp(app, 'a@example.com');
+    const ownerB = await signUp(app, 'b@example.com');
+    const pending = await apply((await signUp(app, 'c@example.com')).token);
+    const shopA = await apply(ownerA.token);
+    const shopB = await apply(ownerB.token, { name: 'محل تاني' });
+    await decide(admin, shopA.id, { status: 'APPROVED' });
+    await decide(admin, shopB.id, { status: 'APPROVED' });
+    const buyer = await signUp(app, 'buyer@example.com');
+    const saves = (id: string, status = 204) =>
+      app.api.put(`/api/v1/users/me/saved-shops/${id}`).set(auth(buyer.token)).expect(status);
+
+    await app.api.get('/api/v1/users/me/saved-shops').expect(401);
+    await saves(pending.id, 404);
+    await saves(shopA.id);
+    await saves(shopB.id);
+    await saves(shopB.id);
+    expect(await saved(buyer.token)).toEqual([shopB.id, shopA.id]);
+
+    // Saved on a phone while signed out: added under what the account has.
+    const other = await signUp(app, 'other@example.com');
+    await app.api
+      .post('/api/v1/users/me/saved-shops/sync')
+      .set(auth(other.token))
+      .send({ shopIds: [shopA.id, pending.id, 'nope', shopB.id] })
+      .expect(204);
+    expect(await saved(other.token)).toEqual([shopB.id, shopA.id]);
+
+    // Suspended: out of the list; open again: back.
+    await decide(admin, shopB.id, { status: 'SUSPENDED', note: 'شكاوى' });
+    expect(await saved(buyer.token)).toEqual([shopA.id]);
+
+    await app.api
+      .delete(`/api/v1/users/me/saved-shops/${shopA.id}`)
+      .set(auth(buyer.token))
+      .expect(204);
+    expect(await saved(buyer.token)).toEqual([]);
+  });
+});

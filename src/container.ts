@@ -28,6 +28,7 @@ import { NotificationsService } from './modules/notifications/notifications.serv
 import { createPushSender, type PushSender } from './modules/notifications/push.js';
 import { createReportModel, ReportsService } from './modules/reports/reports.js';
 import { createSavedPartModel } from './modules/saved/saved.model.js';
+import { createSavedShopModel, SavedShopsService } from './modules/saved/saved-shops.js';
 import { SavedService } from './modules/saved/saved.service.js';
 import { SellersService } from './modules/sellers/sellers.routes.js';
 import { createOfferModel, OffersService } from './modules/offers/offers.js';
@@ -54,6 +55,7 @@ export function createContainer(
     Part: createPartModel(connection),
     Upload: createUploadModel(connection),
     SavedPart: createSavedPartModel(connection),
+    SavedShop: createSavedShopModel(connection),
     Notification: createNotificationModel(connection),
     Device: createDeviceModel(connection),
     Report: createReportModel(connection),
@@ -90,6 +92,8 @@ export function createContainer(
     models.SavedPart,
     overrides.push ?? createPushSender(env),
   );
+  // Set once `shops` exists; shops only call it after a request.
+  let savedShops: SavedShopsService | undefined;
   const shops = new ShopsService({
     shops: models.Shop,
     parts: models.Part,
@@ -97,8 +101,11 @@ export function createContainer(
     audit: models.AuditEntry,
     photos,
     notify: (ownerId, change, shop) => notifications.shopNotice(ownerId, change, shop),
-    removed: (shopId) => notifications.shopRemoved(shopId),
+    removed: async (shopId) => {
+      await Promise.all([notifications.shopRemoved(shopId), savedShops?.shopRemoved(shopId)]);
+    },
   });
+  savedShops = new SavedShopsService(models.SavedShop, shops);
   const reviews = new ReviewsService({
     reviews: models.Review,
     contacts: models.Contact,
@@ -142,7 +149,7 @@ export function createContainer(
     sessions,
     models.Otp,
     photos,
-    [parts, saved, notifications, reports, shops, reviews],
+    [parts, saved, savedShops, notifications, reports, shops, reviews],
     (idToken, googleId) => auth.isGoogleAccount(idToken, googleId),
   );
   const settings = new SettingsService(
@@ -197,6 +204,7 @@ export function createContainer(
     photos,
     parts,
     saved,
+    savedShops,
     sellers,
     shops,
     reviews,

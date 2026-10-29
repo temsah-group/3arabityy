@@ -381,6 +381,18 @@ the account's own. Unknown id: `404 SELLER_NOT_FOUND`.
 skipped. Deleted parts leave every saved list. Parts carry no `isSaved`: the
 app knows its saved ids from this list.
 
+### Saved shops ✅ 🔒
+
+| Method | Path                            | Returns                                              |
+| ------ | ------------------------------- | ---------------------------------------------------- |
+| GET    | `/users/me/saved-shops`         | page of Shop, newest saved first                     |
+| PUT    | `/users/me/saved-shops/:shopId` | 204; 404 unless the shop is open                     |
+| DELETE | `/users/me/saved-shops/:shopId` | 204                                                  |
+| POST   | `/users/me/saved-shops/sync`    | body `{ "shopIds": [] }` saved while signed out; 204 |
+
+Like saved parts. A shop that is suspended or hidden stays saved but is left
+out of the list until it opens again; a deleted shop leaves every list.
+
 ### Notifications ✅ 🔒
 
 | Method | Path                            | Body                                 | Returns                                                    |
