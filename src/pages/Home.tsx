@@ -122,6 +122,9 @@ function CarSearch() {
 // An engine bay under repair (unsplash.com/photos/ec889cbff17f), in public/hero.
 const HERO_WIDTHS = [800, 1200, 1600, 2400];
 const heroPhoto = (width: number) => `/hero/engine-${width}.jpg`;
+// Phones: an engine's belt and pulleys (unsplash.com/photos/67b85e0b08d3), cut tall.
+const PHONE_HERO_WIDTHS = [600, 900, 1200];
+const phoneHeroPhoto = (width: number) => `/hero/pulley-${width}.jpg`;
 
 function Hero() {
   const { tr } = useI18n();
@@ -132,17 +135,26 @@ function Hero() {
   ];
   return (
     <section className="relative overflow-hidden bg-navy-deep text-white">
-      <img
-        src={heroPhoto(1600)}
-        srcSet={HERO_WIDTHS.map((w) => `${heroPhoto(w)} ${w}w`).join(', ')}
-        sizes="100vw"
-        alt=""
-        fetchPriority="high"
-        className="absolute inset-0 h-full w-full scale-105 object-cover object-center"
-      />
-      {/* Dark behind the text, the photo showing towards the other side. */}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-l from-navy-deep/95 via-navy-deep/60 to-navy-deep/10 ltr:bg-gradient-to-r" />
-      <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy-deep/80 to-transparent" />
+      <picture>
+        {/* The wide photo turns to a blur when cut tall, so phones get their own. */}
+        <source
+          media="(max-width: 767px)"
+          srcSet={PHONE_HERO_WIDTHS.map((w) => `${phoneHeroPhoto(w)} ${w}w`).join(', ')}
+          sizes="100vw"
+        />
+        <img
+          src={heroPhoto(1600)}
+          srcSet={HERO_WIDTHS.map((w) => `${heroPhoto(w)} ${w}w`).join(', ')}
+          sizes="100vw"
+          alt=""
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-cover object-center md:scale-105"
+        />
+      </picture>
+      {/* Phones: dark under the text above and the search below. Wider: dark behind the text, the photo towards the other side. */}
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-navy-deep/90 via-navy-deep/75 to-navy-deep/95 md:hidden" />
+      <div aria-hidden className="absolute inset-0 hidden bg-gradient-to-l from-navy-deep/95 via-navy-deep/60 to-navy-deep/10 ltr:bg-gradient-to-r md:block" />
+      <div aria-hidden className="absolute inset-x-0 bottom-0 hidden h-1/3 bg-gradient-to-t from-navy-deep/80 to-transparent md:block" />
       <div aria-hidden className="pointer-events-none absolute -end-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-orange/15 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-24 start-1/3 h-72 w-72 rounded-full border-[48px] border-white/[0.04]" />
       <div className="relative mx-auto grid max-w-page items-center gap-10 px-4 pb-12 pt-10 md:pb-16 md:pt-14 lg:grid-cols-[minmax(0,1fr)_28rem] lg:gap-14 lg:pb-20 lg:pt-16">
