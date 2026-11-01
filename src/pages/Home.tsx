@@ -122,9 +122,9 @@ function CarSearch() {
 // An engine bay under repair (unsplash.com/photos/ec889cbff17f), in public/hero.
 const HERO_WIDTHS = [800, 1200, 1600, 2400];
 const heroPhoto = (width: number) => `/hero/engine-${width}.jpg`;
-// Phones: an engine's belt and pulleys (unsplash.com/photos/67b85e0b08d3), cut tall.
+// Phones: red coilover springs on black (unsplash.com/photos/7dd00b71311a), cut tall.
 const PHONE_HERO_WIDTHS = [600, 900, 1200];
-const phoneHeroPhoto = (width: number) => `/hero/pulley-${width}.jpg`;
+const phoneHeroPhoto = (width: number) => `/hero/coilovers-${width}.jpg`;
 
 function Hero() {
   const { tr } = useI18n();
