@@ -205,7 +205,7 @@ function CarsEditor({ saved }: { saved: CarsSettings['cars'] }) {
                             <NumberInput
                               aria-label="من سنة"
                               w={90}
-                              min={1950}
+                              min={1930}
                               max={thisYear + 1}
                               hideControls
                               value={model.fromYear}
@@ -218,7 +218,7 @@ function CarsEditor({ saved }: { saved: CarsSettings['cars'] }) {
                             <NumberInput
                               aria-label="لحد سنة"
                               w={90}
-                              min={1950}
+                              min={1930}
                               max={thisYear + 1}
                               hideControls
                               placeholder="لسه بيتعمل"

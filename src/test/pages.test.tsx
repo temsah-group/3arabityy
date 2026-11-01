@@ -71,6 +71,17 @@ describe('sign-in', () => {
     await userEvent.click(screen.getByRole('button', { name: 'دخول' }))
     expect(await screen.findByText('البريد الإلكتروني أو كلمة المرور غير صحيحة')).toBeTruthy()
   })
+
+  it('sends a moderator home from an owners\' page opened by its address', async () => {
+    localStorage.setItem(
+      'arabity-admin-session',
+      JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000, admin: { ...admin, role: 'MODERATOR' } }),
+    )
+    const fetch = serve(() => ({ data: { items: [], total: 0, page: 1, pageSize: 25 } }))
+    const router = open('/settings')
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/'))
+    expect(fetch.mock.calls.some(([url]) => String(url).includes('/admin/settings'))).toBe(false)
+  })
 })
 
 describe('reports', () => {

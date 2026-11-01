@@ -34,6 +34,13 @@ export function RequireSignIn({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/** Owners' pages: a moderator who opens one by its address goes home instead of to a refusal. */
+export function RequireOwner() {
+  const { isOwner } = useSession()
+  if (!isOwner) return <Navigate to="/" replace />
+  return <Outlet />
+}
+
 const links = [
   { to: '/', label: 'الرئيسية', icon: IconHome, exact: true },
   { to: '/reports', label: 'البلاغات', icon: IconFlag },
