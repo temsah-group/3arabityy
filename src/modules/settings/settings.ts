@@ -116,7 +116,7 @@ const carName = text(60);
 const year = z
   .number('validation.required')
   .int('validation.query')
-  .min(1950, 'validation.query')
+  .min(1930, 'validation.query')
   .max(new Date().getUTCFullYear() + 2, 'validation.query');
 
 /** Every make with its models; codes are what parts and users' cars keep. */
@@ -165,12 +165,27 @@ const defaultDocument = (name: DocumentName): Document => ({
   updatedAt: new Date(defaults.updatedAt),
 });
 
+/** Bring newer built-in makes/models into saved settings without discarding owner edits. */
+function currentCarBrands(saved: CarBrand[] | undefined): CarBrand[] {
+  if (!saved?.length) return DEFAULT_CAR_BRANDS;
+  const savedById = new Map(saved.map((brand) => [brand.id, brand]));
+  return DEFAULT_CAR_BRANDS.map((base) => {
+    const custom = savedById.get(base.id);
+    if (!custom) return base;
+    const models = new Map(base.models.map((model) => [model.id, model]));
+    for (const model of custom.models) models.set(model.id, model);
+    return { ...base, ...custom, models: [...models.values()] };
+  }).concat(saved.filter((brand) => !DEFAULT_CAR_BRANDS.some((base) => base.id === brand.id)));
+}
+
 export class SettingsService {
   constructor(
     private readonly settings: SettingsModel,
     private readonly audit: AuditModel,
     private readonly parts: PartModel,
     private readonly users: UserModel,
+    /** From `.env`: when set, shown in place of what the dashboard saved. */
+    private readonly defaultSupport: z.infer<typeof supportInput> | null = null,
   ) {}
 
   /**
@@ -179,7 +194,7 @@ export class SettingsService {
    */
   async current() {
     const stored = await this.settings.findById('app').lean().exec();
-    const cars = (stored?.cars?.brands as CarBrand[] | undefined) ?? null;
+    const cars = currentCarBrands(stored?.cars?.brands as CarBrand[] | undefined);
     setCarBrands(cars);
     const documentOf = (name: DocumentName): Document => {
       const saved = stored?.[name];
@@ -189,15 +204,15 @@ export class SettingsService {
     };
     const support = stored?.support;
     return {
-      // Null until an owner sets it; the app then offers no way to reach support.
-      support: support
-        ? { email: support.email, phone: support.phone, whatsapp: support.whatsapp }
-        : null,
+      // The one in .env, else the dashboard's; with neither, the app offers no way to reach support.
+      support:
+        this.defaultSupport ??
+        (support ? { email: support.email, phone: support.phone, whatsapp: support.whatsapp } : null),
       terms: documentOf('terms'),
       privacy: documentOf('privacy'),
       faq: documentOf('faq'),
       cars: {
-        brands: cars ?? DEFAULT_CAR_BRANDS,
+        brands: cars,
         updatedAt: stored?.cars?.updatedAt ?? null,
       },
       updatedAt: stored?.updatedAt ?? null,

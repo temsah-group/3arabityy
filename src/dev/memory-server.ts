@@ -5,6 +5,7 @@ import { createApp } from '../app.js';
 import { logger } from '../common/logger.js';
 import { loadEnv } from '../config/env.js';
 import { createContainer } from '../container.js';
+import { syncAdminAccounts } from '../modules/admin/admin-accounts.js';
 import { SAMPLE_PASSWORD, seedSampleData } from './seed.js';
 
 /**
@@ -31,6 +32,8 @@ async function main() {
   const container = createContainer(connection, env);
   await Promise.all(Object.values(container.models).map((model) => model.syncIndexes()));
   const seeded = await seedSampleData(container);
+  // The admins in .env too, beside the sample ones.
+  await syncAdminAccounts(container.models.Admin, env.ADMIN_ACCOUNTS);
   logger.info('Sample data ready', {
     ...seeded,
     signIn: `seller01@example.com … / ${SAMPLE_PASSWORD}`,

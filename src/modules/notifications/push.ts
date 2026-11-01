@@ -36,9 +36,8 @@ export const ANDROID_CHANNEL = 'arabity_default';
 export class FcmPushSender implements PushSender {
   private readonly app: App;
 
-  /** [serviceAccountFile] is the key file downloaded from the Firebase console. */
-  constructor(serviceAccountFile: string) {
-    const account = JSON.parse(readFileSync(serviceAccountFile, 'utf8')) as Record<string, string>;
+  /** [account] is the key downloaded from the Firebase console, already parsed. */
+  constructor(account: Record<string, string>) {
     this.app = initializeApp({ credential: cert(account) }, 'push');
   }
 
@@ -72,7 +71,7 @@ function toFcm(message: PushMessage): Message {
 export class LogPushSender implements PushSender {
   async send(messages: PushMessage[]): Promise<{ deadTokens: string[] }> {
     if (messages.length > 0) {
-      logger.info('Push (not sent, FIREBASE_SERVICE_ACCOUNT_FILE is empty)', {
+      logger.info('Push (not sent, no Firebase key in FIREBASE_SERVICE_ACCOUNT or _FILE)', {
         count: messages.length,
         first: messages[0]!.title,
       });
@@ -81,7 +80,12 @@ export class LogPushSender implements PushSender {
   }
 }
 
-export const createPushSender = (env: Env): PushSender =>
-  env.FIREBASE_SERVICE_ACCOUNT_FILE
-    ? new FcmPushSender(env.FIREBASE_SERVICE_ACCOUNT_FILE)
-    : new LogPushSender();
+/** The key from `.env` itself, or else from the file it names; neither logs instead. */
+export function createPushSender(env: Env): PushSender {
+  if (env.FIREBASE_SERVICE_ACCOUNT) return new FcmPushSender(env.FIREBASE_SERVICE_ACCOUNT);
+  if (env.FIREBASE_SERVICE_ACCOUNT_FILE) {
+    const account = JSON.parse(readFileSync(env.FIREBASE_SERVICE_ACCOUNT_FILE, 'utf8')) as Record<string, string>;
+    return new FcmPushSender(account);
+  }
+  return new LogPushSender();
+}

@@ -4,7 +4,10 @@ import { createApp } from './app.js';
 import { logger } from './common/logger.js';
 import { loadEnv } from './config/env.js';
 import { createContainer } from './container.js';
+import { syncAdminAccounts } from './modules/admin/admin-accounts.js';
 
+   import dns from 'node:dns';
+   dns.setServers(['8.8.8.8', '1.1.1.1']);
 async function main() {
   const env = loadEnv();
   const connection = await mongoose
@@ -13,6 +16,11 @@ async function main() {
   const container = createContainer(connection, env);
   // Unique indexes (one account per email) must exist before the first write.
   await Promise.all(Object.values(container.models).map((model) => model.syncIndexes()));
+  if (env.ADMIN_ACCOUNTS.length) {
+    if (!container.adminAuth) logger.warn('ADMIN_ACCOUNTS is set but ADMIN_JWT_SECRET is not; /admin is off');
+    const { created, updated } = await syncAdminAccounts(container.models.Admin, env.ADMIN_ACCOUNTS);
+    if (created.length || updated.length) logger.info('Admin accounts from ADMIN_ACCOUNTS', { created, updated });
+  }
   // The cars owners saved, before the first part is checked against them;
   // then every minute, in case another server saved new ones.
   await container.settings.current();

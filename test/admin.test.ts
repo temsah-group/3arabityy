@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { loadEnv } from '../src/config/env.js';
+import { syncAdminAccounts } from '../src/modules/admin/admin-accounts.js';
 import { setCarBrands } from '../src/modules/catalog/catalog.js';
 import { hashPassword } from '../src/modules/users/users.service.js';
 import { auth, listPart, PASSWORD, signUp } from './helpers/people.js';
@@ -544,42 +546,42 @@ describe('cars', () => {
     }[];
     expect(brands.find((brand) => brand.id === 'toyota')).toBeTruthy();
 
-    const withBaic = [
+    const withZotye = [
       ...brands,
       {
-        id: 'baic',
-        nameAr: 'بايك',
-        nameEn: 'BAIC',
-        models: [{ id: 'x35', nameAr: 'X35', nameEn: 'X35', fromYear: 2021, toYear: null }],
+        id: 'zotye',
+        nameAr: 'زوتي',
+        nameEn: 'Zotye',
+        models: [{ id: 't600', nameAr: 'T600', nameEn: 'T600', fromYear: 2016, toYear: null }],
       },
     ];
     const moderator = await admin('MODERATOR');
     await app.api
       .put(`${ADMIN}/settings/cars`)
       .set(auth(moderator))
-      .send({ brands: withBaic })
+      .send({ brands: withZotye })
       .expect(403);
     await app.api
       .put(`${ADMIN}/settings/cars`)
       .set(auth(owner))
-      .send({ brands: [...withBaic, withBaic.at(-1)] })
+      .send({ brands: [...withZotye, withZotye.at(-1)] })
       .expect(400);
     await app.api
       .put(`${ADMIN}/settings/cars`)
       .set(auth(owner))
-      .send({ brands: withBaic })
+      .send({ brands: withZotye })
       .expect(200);
 
     // Parts can be listed for the new car at once.
     await listPart(app, seller.token, {
-      fitments: [{ brandId: 'baic', modelId: 'x35', fromYear: 2022, toYear: 2024 }],
+      fitments: [{ brandId: 'zotye', modelId: 't600', fromYear: 2017, toYear: 2020 }],
     });
     const after = (await app.api.get('/api/v1/app-config').expect(200)).body.data;
-    expect(after.cars.brands.at(-1).id).toBe('baic');
+    expect(after.cars.brands.at(-1).id).toBe('zotye');
     expect(after.cars.updatedAt).toBeTruthy();
 
     // The Corolla has a part listed for it.
-    const withoutCorolla = withBaic.map((brand) =>
+    const withoutCorolla = withZotye.map((brand) =>
       brand.id === 'toyota'
         ? { ...brand, models: brand.models.filter((model) => model.id !== 'corolla') }
         : brand,
@@ -593,7 +595,7 @@ describe('cars', () => {
     expect(refused.body.message).toContain('كورولا');
 
     // An unused one can go.
-    const withoutYaris = withBaic.map((brand) =>
+    const withoutYaris = withZotye.map((brand) =>
       brand.id === 'toyota'
         ? { ...brand, models: brand.models.filter((model) => model.id !== 'yaris') }
         : brand,
@@ -695,5 +697,45 @@ describe('offers', () => {
       'OFFER_UPDATED',
       'OFFER_UPDATED',
     ]);
+  });
+});
+
+describe('admins from ADMIN_ACCOUNTS', () => {
+  const env = (accounts: unknown) =>
+    loadEnv({
+      MONGO_URI: 'mongodb://x',
+      JWT_ACCESS_SECRET: 'a'.repeat(32),
+      JWT_RESET_SECRET: 'b'.repeat(32),
+      ADMIN_ACCOUNTS: typeof accounts === 'string' ? accounts : JSON.stringify(accounts),
+    });
+  const login = (email: string, password: string) =>
+    app.api.post(`${ADMIN}/auth/login`).send({ email, password });
+
+  it('makes the listed admins, then keeps them as the list says', async () => {
+    const Admin = app.container.models.Admin;
+    const first = env([{ email: 'Mona@3arabity.com', name: 'منى', role: 'MODERATOR', password: 'first-password-1' }]);
+    expect(await syncAdminAccounts(Admin, first.ADMIN_ACCOUNTS)).toEqual({ created: ['mona@3arabity.com'], updated: [] });
+    const token = (await login('mona@3arabity.com', 'first-password-1').expect(200)).body.data.accessToken;
+
+    // Same list again: nothing to do, and the session stays.
+    expect(await syncAdminAccounts(Admin, first.ADMIN_ACCOUNTS)).toEqual({ created: [], updated: [] });
+    await app.api.get(`${ADMIN}/auth/me`).set('Authorization', `Bearer ${token}`).expect(200);
+
+    // A new role and password: updated, and the old password and session end.
+    const second = env([{ email: 'mona@3arabity.com', name: 'منى', role: 'OWNER', password: 'second-password-2' }]);
+    expect(await syncAdminAccounts(Admin, second.ADMIN_ACCOUNTS)).toEqual({ created: [], updated: ['mona@3arabity.com'] });
+    await login('mona@3arabity.com', 'first-password-1').expect(401);
+    await app.api.get(`${ADMIN}/auth/me`).set('Authorization', `Bearer ${token}`).expect(401);
+    const res = await login('mona@3arabity.com', 'second-password-2').expect(200);
+    expect(res.body.data.admin.role).toBe('OWNER');
+  });
+
+  it('refuses a list it cannot use', () => {
+    expect(env('').ADMIN_ACCOUNTS).toEqual([]);
+    expect(() => env('not json')).toThrow(/ADMIN_ACCOUNTS/);
+    expect(() => env([{ email: 'x@y.com', name: 'X', role: 'OWNER', password: 'short' }])).toThrow(/8 characters/);
+    expect(() => env([{ email: 'x@y.com', name: 'X', role: 'BOSS', password: 'long-enough-pass' }])).toThrow(/OWNER or MODERATOR/);
+    const twice = { email: 'x@y.com', name: 'X', role: 'OWNER', password: 'long-enough-pass' };
+    expect(() => env([twice, { ...twice, email: 'X@y.com' }])).toThrow(/twice/);
   });
 });

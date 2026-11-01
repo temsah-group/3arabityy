@@ -28,6 +28,8 @@ Dashboard admins (set `ADMIN_JWT_SECRET` and `ADMIN_ORIGINS` first; there is no 
 npm run admin:create -- --email you@example.com --name "Your Name" --role OWNER
 ```
 
+Or list them in `.env` as `ADMIN_ACCOUNTS` (see `.env.example`): every start makes the missing ones and applies a changed name, role or password.
+
 ```bash
 npm run typecheck
 npm test               # end-to-end, against an in-memory MongoDB

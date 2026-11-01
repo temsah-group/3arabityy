@@ -32,7 +32,7 @@ import { createSavedShopModel, SavedShopsService } from './modules/saved/saved-s
 import { SavedService } from './modules/saved/saved.service.js';
 import { SellersService } from './modules/sellers/sellers.routes.js';
 import { createOfferModel, OffersService } from './modules/offers/offers.js';
-import { createSettingsModel, SettingsService } from './modules/settings/settings.js';
+import { createSettingsModel, SettingsService, supportInput } from './modules/settings/settings.js';
 import { createContactModel, createReviewModel } from './modules/reviews/review.model.js';
 import { ReviewsService } from './modules/reviews/reviews.service.js';
 import { createShopModel } from './modules/shops/shop.model.js';
@@ -157,6 +157,7 @@ export function createContainer(
     models.AuditEntry,
     models.Part,
     models.User,
+    supportFromEnv(env),
   );
   const announcements = new AnnouncementsService({
     announcements: models.Announcement,
@@ -222,3 +223,28 @@ export function createContainer(
 }
 
 export type Container = ReturnType<typeof createContainer>;
+
+/** Egyptian numbers as people write them (`010…`, `2010…`, `+2010…`) → `+2010…`. */
+const international = (value: string) => {
+  const digits = value.replace(/[\s()-]/g, '');
+  if (/^01\d{9}$/.test(digits)) return `+2${digits}`;
+  if (/^201\d{9}$/.test(digits)) return `+${digits}`;
+  return digits;
+};
+
+/** Support details from `.env`, all three or none; when set they win over the dashboard's. */
+function supportFromEnv(env: Env) {
+  const given = {
+    email: env.SUPPORT_EMAIL ?? '',
+    phone: international(env.SUPPORT_PHONE),
+    whatsapp: international(env.SUPPORT_WHATSAPP),
+  };
+  if (!given.email || !given.phone || !given.whatsapp) return null;
+  const parsed = supportInput.safeParse(given);
+  if (!parsed.success) {
+    throw new Error(
+      'Invalid environment:\n  SUPPORT_PHONE / SUPPORT_WHATSAPP: must be phone numbers, like 01001234567 or +201001234567',
+    );
+  }
+  return parsed.data;
+}

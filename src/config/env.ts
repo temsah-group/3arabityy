@@ -17,6 +17,55 @@ const originList = z
       .filter(Boolean),
   );
 
+/**
+ * The dashboard's admins as a JSON list, made or brought up to date on every
+ * start: `[{"email":"…","name":"…","role":"OWNER","password":"…"}]`.
+ */
+const adminAccounts = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string' || !value.trim()) return [];
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  z
+    .array(
+      z.strictObject({
+        email: z.email('must be an email').transform((email) => email.trim().toLowerCase()),
+        name: z.string().trim().min(1, 'is required').max(100),
+        role: z.enum(['OWNER', 'MODERATOR'], 'must be OWNER or MODERATOR'),
+        password: z.string().min(8, 'must be at least 8 characters').max(200),
+      }),
+      'must be a JSON list of admins',
+    )
+    .refine((list) => new Set(list.map((a) => a.email)).size === list.length, 'lists an email twice'),
+);
+
+/** A service account key as JSON; it must be one (project, email, key) to be used. */
+const firebaseAccount = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string' || !value.trim()) return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  z
+    .looseObject(
+      {
+        project_id: z.string().min(1),
+        client_email: z.string().min(1),
+        private_key: z.string().includes('PRIVATE KEY', { message: 'has no private_key' }),
+      },
+      'must be the service account key file\'s JSON, on one line',
+    )
+    .transform((account) => account as Record<string, string>)
+    .optional(),
+);
+
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -40,6 +89,7 @@ const schema = z
     ADMIN_TOKEN_HOURS: z.coerce.number().int().positive().max(24).default(8),
     /** The dashboard's address(es), the only browsers allowed to call `/admin`. */
     ADMIN_ORIGINS: originList,
+    ADMIN_ACCOUNTS: adminAccounts,
     TRUST_PROXY: z
       .string()
       .default('false')
@@ -60,6 +110,13 @@ const schema = z
 
     /** The Firebase service account key file; empty logs pushes instead of sending them. */
     FIREBASE_SERVICE_ACCOUNT_FILE: z.string().default(''),
+    /** The same key's JSON on one line, in place of the file; wins when both are set. */
+    FIREBASE_SERVICE_ACCOUNT: firebaseAccount,
+
+    /** Support contact the app shows; when all three are set they win over the dashboard's. */
+    SUPPORT_EMAIL: z.preprocess((value) => value || undefined, z.email('must be an email').optional()),
+    SUPPORT_PHONE: z.string().trim().default(''),
+    SUPPORT_WHATSAPP: z.string().trim().default(''),
 
     /** OAuth client ids whose Google tokens are accepted; empty turns Google sign-in off. */
     GOOGLE_CLIENT_IDS: originList,
