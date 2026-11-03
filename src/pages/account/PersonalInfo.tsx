@@ -9,9 +9,11 @@ import { useAuth } from '@/lib/auth';
 import { fromE164, toE164 } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import type { User } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function PersonalInfo() {
   const { tr } = useI18n();
+  usePageMeta(tr('بياناتي', 'Personal info'));
   const { user, setUser } = useAuth();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);

@@ -11,6 +11,7 @@ import { CATEGORIES, CONDITIONS, GOVERNORATES, modelYears, useLabels } from '@/l
 import { formatPrice, fromE164, toE164 } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import type { Category, Condition, Fitment, Part, PartInput } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 const MAX_PHOTOS = 8;
 
@@ -216,6 +217,7 @@ export default function Sell() {
   const { id } = useParams();
   const editing = Boolean(id);
   const { tr, lang } = useI18n();
+  usePageMeta(editing ? tr('تعديل الإعلان', 'Edit listing') : tr('بيع قطعة', 'Sell a part'));
   const labels = useLabels();
   const { user } = useAuth();
   const toast = useToast();

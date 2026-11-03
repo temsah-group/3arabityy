@@ -12,6 +12,7 @@ import { CATEGORIES, GOVERNORATES, useLabels } from '@/lib/catalog';
 import { fromE164, toE164 } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import type { Category, Shop, ShopInput } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 interface Form {
   name: string;
@@ -134,6 +135,7 @@ function Images({ shop, onChange }: { shop: Shop; onChange: (s: Shop) => void })
 
 export default function MyShop() {
   const { tr, lang } = useI18n();
+  usePageMeta(tr('محلي', 'My shop'));
   const labels = useLabels();
   const { user } = useAuth();
   const toast = useToast();

@@ -7,9 +7,11 @@ import { Button, TextField, useToast } from '@/components/ui';
 import { ApiError, patch } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 export default function ChangePassword() {
   const { tr } = useI18n();
+  usePageMeta(tr('تغيير كلمة السر', 'Change password'));
   const { user, setUser } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();

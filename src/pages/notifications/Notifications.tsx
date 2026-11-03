@@ -9,6 +9,7 @@ import { relativeDay } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { AppNotification, NotificationKind, Page } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 const icons: Record<NotificationKind, typeof Bell> = {
   FITS_YOUR_CAR: Car,
@@ -21,6 +22,7 @@ const icons: Record<NotificationKind, typeof Bell> = {
 
 export default function Notifications() {
   const { tr, lang } = useI18n();
+  usePageMeta(tr('الإشعارات', 'Notifications'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const list = usePaged<AppNotification, Page<AppNotification> & { unreadCount?: number }>(['me', 'notifications'], '/notifications');

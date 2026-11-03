@@ -15,6 +15,7 @@ import { garage, markViewed } from '@/lib/collections';
 import { formatPrice, relativeDay } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import type { Part } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 function Gallery({ part }: { part: Part }) {
   const [index, setIndex] = useState(0);
@@ -62,14 +63,16 @@ export default function PartDetails() {
   });
 
   useEffect(() => {
-    if (part.data) {
-      markViewed(part.data.id);
-      document.title = `${part.data.name} — عربيتي`;
-    }
-    return () => {
-      document.title = 'عربيتي — قطع غيار العربيات';
-    };
+    if (part.data) markViewed(part.data.id);
   }, [part.data]);
+  const shown = part.data;
+  usePageMeta(
+    shown?.name,
+    shown &&
+      [`${labels.condition(shown.condition)} · ${shown.price.toLocaleString('en')} ${tr('جنيه', 'EGP')} · ${labels.city(shown.city)}`, shown.description]
+        .filter(Boolean)
+        .join('. '),
+  );
 
   if (part.isLoading) return <PageSpinner />;
   if (part.isError || !part.data) {

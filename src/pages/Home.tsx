@@ -12,6 +12,7 @@ import { carsParam, CATEGORIES, CONDITIONS, GOVERNORATES, modelYears, useAppConf
 import { addCar, followCar, followedCars, garage, MAX_CARS, recent } from '@/lib/collections';
 import { useI18n } from '@/lib/i18n';
 import type { CarBrand, Category, Condition, HomeData, Part } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 function Section({ title, subtitle, link, children }: { title: string; subtitle?: string; link?: string; children: ReactNode }) {
   const { tr, lang } = useI18n();
@@ -522,6 +523,7 @@ function MyGarage() {
 
 export default function Home() {
   const { tr } = useI18n();
+  usePageMeta(null);
   const state = garage.use();
   const carQuery = carsParam(followedCars(state));
   const home = useQuery({ queryKey: ['home', carQuery], queryFn: () => get<HomeData>('/parts/home', { cars: carQuery }), placeholderData: (previous) => previous });

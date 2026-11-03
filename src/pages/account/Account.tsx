@@ -6,6 +6,7 @@ import { Avatar, Button, Verified } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { formatDate, fromE164 } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { useAccountLinks } from './AccountLayout';
 
@@ -161,6 +162,8 @@ function Overview() {
 }
 
 export default function Account() {
+  const { tr } = useI18n();
+  usePageMeta(tr('حسابي', 'My account'));
   return (
     <>
       <MobileMenu />

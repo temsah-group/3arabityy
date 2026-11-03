@@ -10,9 +10,11 @@ import { useAuth } from '@/lib/auth';
 import { saved } from '@/lib/collections';
 import { useI18n } from '@/lib/i18n';
 import type { Part } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function Saved() {
   const { tr } = useI18n();
+  usePageMeta(tr('المحفوظات', 'Saved parts'));
   const { status } = useAuth();
   const ids = saved.use();
   // The ids drive the list, so removing one hides it at once.

@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button, TextField } from '@/components/ui';
 import { ApiError, post } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { AuthShell, fieldErr } from './AuthShell';
 
 export default function ForgotPassword() {
   const { tr } = useI18n();
+  usePageMeta(tr('نسيت كلمة السر', 'Forgot password'));
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<ApiError | null>(null);

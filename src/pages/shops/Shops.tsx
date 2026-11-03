@@ -9,9 +9,11 @@ import { GOVERNORATES, useLabels } from '@/lib/catalog';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Shop } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function Shops() {
   const { tr } = useI18n();
+  usePageMeta(tr('محلات قطع الغيار', 'Car parts shops'), tr('محلات قطع غيار العربيات في مصر على عربيتي: دوّر بالمحافظة والماركة واتواصل مع المحل مباشرة.', 'Car parts shops across Egypt on 3arabity: search by governorate and make and contact the shop directly.'));
   const labels = useLabels();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');

@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Part, Seller as SellerT } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function Seller() {
   const { id = '' } = useParams();
@@ -19,6 +20,7 @@ export default function Seller() {
   const labels = useLabels();
   const { user } = useAuth();
   const seller = useQuery({ queryKey: ['seller', id], queryFn: () => get<SellerT>(`/sellers/${id}`) });
+  usePageMeta(seller.data?.name, seller.data && tr(`قطع غيار من ${seller.data.name} على عربيتي`, `Car parts from ${seller.data.name} on 3arabity`));
   const parts = usePaged<Part>(['seller', id, 'parts'], `/sellers/${id}/parts`, {}, { enabled: seller.isSuccess && !seller.data?.shopId });
 
   if (seller.isLoading) return <PageSpinner />;

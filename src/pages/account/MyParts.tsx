@@ -10,6 +10,7 @@ import { formatPrice, relativeDay } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Part } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 const RENEW_AFTER_DAYS = 30;
 
@@ -98,6 +99,7 @@ function PartRowItem({ part, onChanged }: { part: Part; onChanged: () => void })
 
 export default function MyParts() {
   const { tr } = useI18n();
+  usePageMeta(tr('إعلاناتي', 'My listings'));
   const queryClient = useQueryClient();
   const list = usePaged<Part>(['me', 'parts'], '/parts/mine');
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['me', 'parts'] });

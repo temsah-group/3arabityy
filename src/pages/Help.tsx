@@ -6,6 +6,7 @@ import { ErrorState, PageSpinner } from '@/components/ui';
 import { useAppConfig } from '@/lib/catalog';
 import { formatDate, fromE164, whatsappLink } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 /** From `.env`, for when the API sends no support details. */
 const DEFAULT_SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) ?? '';
@@ -15,6 +16,7 @@ const fill = (text: string, email?: string) => text.replaceAll('{supportEmail}',
 
 export function Help() {
   const { tr, pick } = useI18n();
+  usePageMeta(tr('المساعدة', 'Help'));
   const config = useAppConfig();
   if (config.isLoading) return <PageSpinner />;
   if (config.isError || !config.data) return <ErrorState error={config.error} onRetry={() => config.refetch()} />;
@@ -61,6 +63,7 @@ export function Legal() {
   const { doc } = useParams();
   const { tr, pick, lang } = useI18n();
   const config = useAppConfig();
+  usePageMeta(doc === 'privacy' ? tr('سياسة الخصوصية', 'Privacy policy') : tr('شروط الاستخدام', 'Terms of use'));
   if (config.isLoading) return <PageSpinner />;
   if (config.isError || !config.data) return <ErrorState error={config.error} onRetry={() => config.refetch()} />;
   const isPrivacy = doc === 'privacy';

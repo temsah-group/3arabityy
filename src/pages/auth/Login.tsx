@@ -2,15 +2,18 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { GoogleSignIn } from '@/components/GoogleSignIn';
 import { Button, TextField } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { rememberPassword, useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { AuthShell, fieldErr } from './AuthShell';
 
 export default function Login() {
   const { tr } = useI18n();
+  usePageMeta(tr('تسجيل الدخول', 'Sign in'));
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,6 +59,7 @@ export default function Login() {
         {error && !error.errors.length && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
         <Button type="submit" className="w-full" loading={loading}>{tr('ادخل', 'Sign in')}</Button>
       </form>
+      <GoogleSignIn from={from} rememberMe={remember} />
       <p className="mt-6 text-center text-sm text-ink-soft">
         {tr('معندكش حساب؟ ', "Don't have an account? ")}
         <Link to="/register" state={{ from }} className="font-bold text-orange-deep hover:underline">{tr('اعمل حساب', 'Create one')}</Link>

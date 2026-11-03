@@ -9,6 +9,7 @@ import { put } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Review } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 function Reply({ review, onDone }: { review: Review; onDone: () => void }) {
   const { tr } = useI18n();
@@ -48,6 +49,7 @@ function Reply({ review, onDone }: { review: Review; onDone: () => void }) {
 
 export default function ReceivedReviews() {
   const { tr } = useI18n();
+  usePageMeta(tr('التقييمات', 'Reviews'));
   const queryClient = useQueryClient();
   const list = usePaged<Review>(['me', 'reviews'], '/reviews/received');
   return (

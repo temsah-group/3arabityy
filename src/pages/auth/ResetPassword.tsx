@@ -5,11 +5,13 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button, TextField, useToast } from '@/components/ui';
 import { ApiError, post } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { AuthShell, fieldErr } from './AuthShell';
 
 export default function ResetPassword() {
   const { tr } = useI18n();
+  usePageMeta(tr('كلمة سر جديدة', 'New password'));
   const toast = useToast();
   const navigate = useNavigate();
   const resetToken = (useLocation().state as { resetToken?: string } | null)?.resetToken;

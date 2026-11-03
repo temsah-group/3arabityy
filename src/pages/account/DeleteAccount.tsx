@@ -7,9 +7,11 @@ import { Button, TextField, useToast } from '@/components/ui';
 import { ApiError, del } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 export default function DeleteAccount() {
   const { tr } = useI18n();
+  usePageMeta(tr('مسح الحساب', 'Delete account'));
   const { user, forget } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();

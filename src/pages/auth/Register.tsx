@@ -2,16 +2,19 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { GoogleSignIn } from '@/components/GoogleSignIn';
 import { Button, TextField } from '@/components/ui';
 import { ApiError, post } from '@/lib/api';
 import { toE164 } from '@/lib/format';
 import { rememberPassword } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { AuthShell, fieldErr } from './AuthShell';
 
 export default function Register() {
   const { tr } = useI18n();
+  usePageMeta(tr('اعمل حساب', 'Create an account'));
   const navigate = useNavigate();
   const from = (useLocation().state as { from?: string } | null)?.from ?? '/';
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirm: '' });
@@ -61,6 +64,7 @@ export default function Register() {
         </p>
         <Button type="submit" className="w-full" loading={loading}>{tr('اعمل الحساب', 'Create account')}</Button>
       </form>
+      <GoogleSignIn from={from} />
       <p className="mt-6 text-center text-sm text-ink-soft">
         {tr('عندك حساب؟ ', 'Have an account? ')}
         <Link to="/login" className="font-bold text-orange-deep hover:underline">{tr('ادخل', 'Sign in')}</Link>

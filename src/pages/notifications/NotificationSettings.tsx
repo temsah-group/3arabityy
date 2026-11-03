@@ -5,9 +5,11 @@ import { cx, ErrorState, errorMessage, PageSpinner, useToast } from '@/component
 import { get, put } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import type { NotificationSettings as Settings } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function NotificationSettings() {
   const { tr } = useI18n();
+  usePageMeta(tr('إعدادات الإشعارات', 'Notification settings'));
   const toast = useToast();
   const queryClient = useQueryClient();
   const settings = useQuery({ queryKey: ['me', 'notification-settings'], queryFn: () => get<Settings>('/notifications/settings') });

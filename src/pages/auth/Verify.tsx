@@ -6,6 +6,7 @@ import { Button, useToast } from '@/components/ui';
 import { ApiError, post } from '@/lib/api';
 import { takePassword, useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n';
+import { usePageMeta } from '@/lib/seo';
 
 import { AuthShell } from './AuthShell';
 
@@ -19,6 +20,7 @@ const LENGTH = 6;
 
 export default function Verify() {
   const { tr } = useI18n();
+  usePageMeta(tr('تأكيد الإيميل', 'Confirm your email'));
   const { login } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();

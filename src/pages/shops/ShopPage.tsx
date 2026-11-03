@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/format';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Part, Shop } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 export default function ShopPage() {
   const { id = '' } = useParams();
@@ -21,6 +22,7 @@ export default function ShopPage() {
   const { user } = useAuth();
   const shop = useQuery({ queryKey: ['shop', id], queryFn: () => get<Shop>(`/shops/${id}`) });
   const parts = usePaged<Part>(['shop', id, 'parts'], `/shops/${id}/parts`);
+  usePageMeta(shop.data?.name, shop.data && (shop.data.description || tr(`محل قطع غيار ${shop.data.name} على عربيتي`, `${shop.data.name}, a car parts shop on 3arabity`)));
 
   if (shop.isLoading) return <PageSpinner />;
   if (shop.isError || !shop.data) return <ErrorState error={shop.error} onRetry={() => shop.refetch()} />;

@@ -12,6 +12,7 @@ import { addCar, garage } from '@/lib/collections';
 import { useI18n } from '@/lib/i18n';
 import { LoadMore, usePaged } from '@/lib/paging';
 import type { Category, Condition, Part, SearchResult } from '@/lib/types';
+import { usePageMeta } from '@/lib/seo';
 
 const FILTER_KEYS = ['category', 'condition', 'origin', 'city', 'minPrice', 'maxPrice', 'cars', 'sellerId'] as const;
 
@@ -363,6 +364,12 @@ export default function Search() {
   for (const key of FILTER_KEYS) query[key] = params.get(key) ?? undefined;
 
   const list = usePaged<Part, SearchResult>(['parts', 'search'], '/parts', query);
+  const labels = useLabels();
+  const category = params.get('category') as Category | null;
+  usePageMeta(
+    query.q ? tr(`بحث: ${query.q}`, `Search: ${query.q}`) : category ? labels.category(category) : tr('كل قطع الغيار', 'All car parts'),
+    tr('قطع غيار عربيات جديدة ومستعملة واستيراد من بيّاعين ومحلات في كل محافظات مصر.', 'New, used and imported car parts from sellers and shops across Egypt.'),
+  );
   const active = FILTER_KEYS.filter((k) => params.get(k)).length;
 
   // Several keys in one go: react-router's updates don't stack within a render,
