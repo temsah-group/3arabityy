@@ -1,0 +1,117 @@
+{
+  "terms": [
+    {
+      "titleAr": "عن عربيتي",
+      "titleEn": "About 3arabity",
+      "bodyAr": "عربيتي سوق بيوصّل اللي عايز يشتري قطع غيار عربيات في مصر (جديد ومستعمل واستيراد) بالبائعين. التطبيق مش طرف في البيع: الاتفاق على السعر والاستلام والدفع بيتم بين المشتري والبائع مباشرة بالتليفون أو الواتساب.",
+      "bodyEn": "3arabity is a marketplace that connects people buying car spare parts in Egypt (new, used and imported) with sellers. The app is not a party to any sale: price, handover and payment are agreed directly between buyer and seller by phone or WhatsApp."
+    },
+    {
+      "titleAr": "حسابك",
+      "titleEn": "Your account",
+      "bodyAr": "لازم تكون بياناتك صحيحة ورقمك شغال. انت مسؤول عن الحفاظ على كلمة المرور وعن أي نشاط بيتم من حسابك. تقدر تحذف حسابك في أي وقت من صفحة حسابي.",
+      "bodyEn": "Your details must be accurate and your number reachable. You are responsible for keeping your password safe and for activity on your account. You can delete your account at any time from the account tab."
+    },
+    {
+      "titleAr": "عرض القطع",
+      "titleEn": "Listing parts",
+      "bodyAr": "البائع مسؤول عن إن القطعة ملكه، وإن الصور والوصف والحالة والسعر والعربيات اللي تركب عليها صحيحة. ممنوع عرض قطع مسروقة أو مقلدة على إنها أصلي أو أي حاجة مخالفة للقانون. لما القطعة تتباع، علّم إنها اتباعت أو احذفها.",
+      "bodyEn": "Sellers are responsible for owning the part and for its photos, description, condition, price and the cars it fits being accurate. Stolen parts, copies sold as original, and anything unlawful are not allowed. Once a part sells, mark it sold or delete it."
+    },
+    {
+      "titleAr": "الشراء",
+      "titleEn": "Buying",
+      "bodyAr": "اتأكد من القطعة ومن إنها تركب على عربيتك قبل ما تدفع. يفضّل المعاينة والاستلام في مكان عام، ومتحوّلش فلوس قبل ما تشوف القطعة. عربيتي مش مسؤول عن حالة القطعة أو عن أي خلاف بين المشتري والبائع.",
+      "bodyEn": "Check the part and that it fits your car before paying. Prefer inspecting and collecting in a public place, and don't transfer money before seeing the part. 3arabity is not responsible for a part's condition or for disputes between buyers and sellers."
+    },
+    {
+      "titleAr": "الإبلاغ والإيقاف",
+      "titleEn": "Reports and suspension",
+      "bodyAr": "تقدر تبلّغ عن أي إعلان أو بائع مخالف. من حقنا نشيل أي إعلان أو نوقف أي حساب بيخالف الشروط دي.",
+      "bodyEn": "You can report any listing or seller that breaks these terms. We may remove listings or suspend accounts that do."
+    },
+    {
+      "titleAr": "تعديل الشروط",
+      "titleEn": "Changes to these terms",
+      "bodyAr": "ممكن نعدّل الشروط دي، وهنبلغك بأي تغيير مهم. استخدامك للتطبيق بعد التعديل معناه موافقتك عليه.",
+      "bodyEn": "We may change these terms and will tell you about important changes. Using the app afterwards means you accept them."
+    },
+    {
+      "titleAr": "التواصل",
+      "titleEn": "Contact",
+      "bodyAr": "لأي سؤال عن الشروط دي ابعتلنا على {supportEmail}",
+      "bodyEn": "For any question about these terms, write to {supportEmail}"
+    }
+  ],
+  "privacy": [
+    {
+      "titleAr": "البيانات اللي بنجمعها",
+      "titleEn": "What we collect",
+      "bodyAr": "اسمك وبريدك ورقم تليفونك لما تعمل حساب، والقطع اللي بتعرضها بصورها ووصفها ومحافظتها، والعربية اللي بتختارها، والقطع اللي بتحفظها، ولغة التطبيق.",
+      "bodyEn": "Your name, email and phone number when you sign up; the parts you list with their photos, description and governorate; the car you pick, the parts you save, and the app language."
+    },
+    {
+      "titleAr": "بنستخدمها في إيه",
+      "titleEn": "How we use it",
+      "bodyAr": "عشان نشغّل حسابك، ونعرض قطعك للمشترين، ونوريك القطع اللي تركب على عربيتك، ونبعتلك الإشعارات اللي اخترتها، ونحمي التطبيق من الإعلانات المزيفة والنصب.",
+      "bodyEn": "To run your account, show your parts to buyers, show you parts that fit your car, send the notifications you chose, and protect the app from fake listings and fraud."
+    },
+    {
+      "titleAr": "مين بيشوفها",
+      "titleEn": "Who sees it",
+      "bodyAr": "لما تعرض قطعة، اسمك ورقمك ومحافظتك بيظهروا مع الإعلان عشان المشترين يتواصلوا معاك. مش بنبيع بياناتك لحد. ممكن نشاركها مع مزودي الخدمة اللي بيشغّلوا التطبيق (زي الاستضافة والإيميل) أو لو القانون طلب كدا.",
+      "bodyEn": "When you list a part, your name, number and governorate appear with it so buyers can reach you. We never sell your data. We may share it with providers that run the app (such as hosting and email) or when the law requires it."
+    },
+    {
+      "titleAr": "على جهازك",
+      "titleEn": "On your device",
+      "bodyAr": "العربية اللي اخترتها والقطع المحفوظة وعمليات البحث الأخيرة بتتحفظ على جهازك. بنطلب إذن الكاميرا والصور بس لما تضيف صور لقطعة.",
+      "bodyEn": "The car you picked, saved parts and recent searches are kept on your device. We ask for camera and photo access only when you add photos to a part."
+    },
+    {
+      "titleAr": "الاحتفاظ والحذف",
+      "titleEn": "Keeping and deleting",
+      "bodyAr": "بنحتفظ ببياناتك طول ما حسابك موجود. لما تحذف حسابك من صفحة حسابي، بنحذف بياناتك وقطعك، إلا اللي القانون بيلزمنا نحتفظ بيه لفترة.",
+      "bodyEn": "We keep your data while your account exists. When you delete your account from the account tab, we delete your data and listings, except what the law requires us to keep for a time."
+    },
+    {
+      "titleAr": "التواصل",
+      "titleEn": "Contact",
+      "bodyAr": "لأي سؤال عن خصوصيتك ابعتلنا على {supportEmail}",
+      "bodyEn": "For any privacy question, write to {supportEmail}"
+    }
+  ],
+  "faq": [
+    {
+      "titleAr": "إزاي أشتري قطعة؟",
+      "titleEn": "How do I buy a part?",
+      "bodyAr": "افتح القطعة واتصل بالبائع أو كلمه واتساب من الزراير اللي تحت. اتفقوا على السعر والمعاينة والاستلام، والدفع بيكون بينكم مباشرة.",
+      "bodyEn": "Open the part and call the seller or message them on WhatsApp with the buttons at the bottom. Agree on the price, inspection and handover; payment is between you directly."
+    },
+    {
+      "titleAr": "إزاي أعرف إن القطعة تركب على عربيتي؟",
+      "titleEn": "How do I know a part fits my car?",
+      "bodyAr": "اختار عربيتك من أعلى الرئيسية، وصفحة القطعة هتقولك إذا كانت تركب عليها. ولو معاك رقم القطعة، قارنه برقم القطعة القديمة قبل ما تشتري.",
+      "bodyEn": "Pick your car at the top of home and the part page tells you whether it fits. If you have the part number, compare it with your old part before buying."
+    },
+    {
+      "titleAr": "إزاي أبيع قطعة؟",
+      "titleEn": "How do I sell a part?",
+      "bodyAr": "دوس على زرار + في النص تحت، وضيف الصور والبيانات والعربيات اللي تركب عليها والسعر، وبعدين انشرها.",
+      "bodyEn": "Tap the + button at the bottom, add photos, details, the cars it fits and the price, then publish."
+    },
+    {
+      "titleAr": "القطعة اتباعت، أعمل إيه؟",
+      "titleEn": "My part sold. What now?",
+      "bodyAr": "من حسابي ← قطعي المعروضة، دوس \"اتباعت\". القطعة هتختفي من عند المشترين وتفضل عندك، وتقدر ترجّعها للعرض.",
+      "bodyEn": "In Account → My listings, tap \"Sold\". Buyers stop seeing it, you keep it, and you can put it back on sale."
+    },
+    {
+      "titleAr": "إزاي أحمي نفسي من النصب؟",
+      "titleEn": "How do I avoid scams?",
+      "bodyAr": "عاين القطعة قبل ما تدفع، واستلم في مكان عام، ومتحوّلش فلوس مقدماً لحد متعرفوش. ولو شكّيت في إعلان أو بائع، بلّغ عنه من صفحته.",
+      "bodyEn": "Inspect the part before paying, meet in a public place, and don't send money upfront to someone you don't know. If a listing or seller looks wrong, report it from its page."
+    }
+  ],
+  "updatedAt": "2026-10-15T00:00:00.000"
+}

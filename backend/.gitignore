@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+uploads/
+
+# Firebase service account keys
+*firebase-adminsdk*.json
+# A service account key saved under this name (it is not Firebase CLI config).
+firebase.json
+secrets/
