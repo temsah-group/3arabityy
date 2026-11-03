@@ -12,6 +12,7 @@ import { notificationsRoutes } from './modules/notifications/notifications.route
 import { partsRoutes, uploadRoutes } from './modules/parts/parts.routes.js';
 import { reportsRoutes } from './modules/reports/reports.js';
 import { reviewsRoutes } from './modules/reviews/reviews.routes.js';
+import { sitemapRoutes } from './modules/seo/sitemap.js';
 import { savedShopsRoutes } from './modules/saved/saved-shops.js';
 import { savedRoutes } from './modules/saved/saved.routes.js';
 import { sellersRoutes } from './modules/sellers/sellers.routes.js';
@@ -85,6 +86,9 @@ export function createApp(container: Container) {
     ),
   );
   app.use(API_PREFIX, api);
+  if (env.SITE_URL) {
+    app.use(sitemapRoutes(env.SITE_URL, container.models.Part, container.models.Shop));
+  }
 
   // Uploaded photos. Names are random and never reused, so they cache for good.
   app.use(

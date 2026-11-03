@@ -491,3 +491,37 @@ describe('sample data', () => {
     expect(mine.body.data.items.length).toBeGreaterThan(0);
   });
 });
+
+describe('sitemap', () => {
+  it('lists the website pages and the parts for sale, on the website address', async () => {
+    const seller = await account('sitemap@example.com');
+    const make = async (extra: object = {}) => {
+      const images = [await upload(seller.token)];
+      const res = await app.api
+        .post('/api/v1/parts')
+        .set(auth(seller.token))
+        .send(pads(images, extra))
+        .expect(201);
+      return res.body.data.id as string;
+    };
+    const forSale = await make();
+    const sold = await make({ name: 'فانوس' });
+    const hidden = await make({ name: 'مرايا' });
+    await app.api
+      .post(`/api/v1/parts/${sold}/sold`)
+      .set(auth(seller.token))
+      .send({ sold: true })
+      .expect(200);
+    await app.container.models.Part.updateOne(
+      { _id: hidden },
+      { $set: { hiddenAt: new Date(), hiddenReason: 'ADMIN' } },
+    );
+
+    const res = await app.api.get('/sitemap.xml').expect(200);
+    expect(res.headers['content-type']).toContain('application/xml');
+    expect(res.text).toContain('<loc>https://3rbyty.example/</loc>');
+    expect(res.text).toContain(`<loc>https://3rbyty.example/parts/${forSale}</loc>`);
+    expect(res.text).not.toContain(sold);
+    expect(res.text).not.toContain(hidden);
+  });
+});

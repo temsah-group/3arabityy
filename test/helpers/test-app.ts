@@ -77,6 +77,7 @@ export async function startTestApp(): Promise<TestApp> {
     JWT_RESET_SECRET: 'test-reset-secret-0123456789-abcdefghijk',
     ADMIN_JWT_SECRET: 'test-admin-secret-0123456789-abcdefghijkl',
     ADMIN_ORIGINS: 'https://admin.example.com',
+    SITE_URL: 'https://3rbyty.example',
   });
   const connection: Connection = await mongoose.createConnection(env.MONGO_URI).asPromise();
   const mailer = new CapturingMailer();

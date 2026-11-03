@@ -40,7 +40,10 @@ const adminAccounts = z.preprocess(
       }),
       'must be a JSON list of admins',
     )
-    .refine((list) => new Set(list.map((a) => a.email)).size === list.length, 'lists an email twice'),
+    .refine(
+      (list) => new Set(list.map((a) => a.email)).size === list.length,
+      'lists an email twice',
+    ),
 );
 
 /** A service account key as JSON; it must be one (project, email, key) to be used. */
@@ -60,7 +63,7 @@ const firebaseAccount = z.preprocess(
         client_email: z.string().min(1),
         private_key: z.string().includes('PRIVATE KEY', { message: 'has no private_key' }),
       },
-      'must be the service account key file\'s JSON, on one line',
+      "must be the service account key file's JSON, on one line",
     )
     .transform((account) => account as Record<string, string>)
     .optional(),
@@ -114,9 +117,15 @@ const schema = z
     FIREBASE_SERVICE_ACCOUNT: firebaseAccount,
 
     /** Support contact the app shows; when all three are set they win over the dashboard's. */
-    SUPPORT_EMAIL: z.preprocess((value) => value || undefined, z.email('must be an email').optional()),
+    SUPPORT_EMAIL: z.preprocess(
+      (value) => value || undefined,
+      z.email('must be an email').optional(),
+    ),
     SUPPORT_PHONE: z.string().trim().default(''),
     SUPPORT_WHATSAPP: z.string().trim().default(''),
+
+    /** The website's address; serves /sitemap.xml with its pages when set. */
+    SITE_URL: z.preprocess((value) => value || undefined, z.url('must be a URL').optional()),
 
     /** OAuth client ids whose Google tokens are accepted; empty turns Google sign-in off. */
     GOOGLE_CLIENT_IDS: originList,
